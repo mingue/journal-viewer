@@ -1,4 +1,5 @@
 use crate::libsdjournal::*;
+use crate::query_builder::QueryBuilder;
 use bitflags::bitflags;
 use libc::{c_char, c_void, size_t};
 use std::collections::HashMap;
@@ -7,13 +8,14 @@ use std::ffi::{CStr, CString};
 bitflags! {
     #[repr(C)]
     pub struct OpenFlags: u32 {
+        /// Only files generated on the local machine
         const SD_JOURNAL_LOCAL_ONLY = 1 << 0;
+        /// Only volatile journal files excluding persisted
         const SD_JOURNAL_RUNTIME_ONLY = 1 << 1;
+        /// System services and the Kernel
         const SD_JOURNAL_SYSTEM = 1 << 2;
+        /// Current user
         const SD_JOURNAL_CURRENT_USER = 1 << 3;
-        const SD_JOURNAL_OS_ROOT = 1 << 4;
-        const SD_JOURNAL_ALL_NAMESPACES = 1 << 5;
-        const SD_JOURNAL_INCLUDE_DEFAULT_NAMESPACE = 1 << 6;
     }
 }
 
@@ -46,17 +48,30 @@ impl Journal {
         Err(ret)
     }
 
-    pub fn get_logs(&self) -> Result<Vec<HashMap<&str, &str>>, i32> {
-        let mut logs = Vec::new();
-        
-        unsafe {
-            let data = CString::new("_PID=1").expect("Could not generate string");
-            let ret = sd_journal_add_match(self.ptr, data.as_ptr(), 0usize);
+    pub fn get_logs(&self) -> Result<Vec<HashMap<&str, String>>, i32> {
+        self.get_logs_internal()
+    }
 
-            if ret < 0 {
-                return Err(ret);
-            }
+    pub fn query_logs(&self, qb: &QueryBuilder) -> Result<Vec<HashMap<&str, String>>, i32> {
+        let ret: libc::c_int = 0;
+
+        self.apply_pid_filter(qb);
+        self.apply_minimum_priority(qb);
+        self.apply_unit(qb);
+        self.apply_slice(qb);
+
+        self.get_logs_internal()
+    }
+
+    pub fn close(&mut self) {
+        unsafe {
+            sd_journal_close(self.ptr);
         }
+    }
+
+    fn get_logs_internal(&self) -> Result<Vec<HashMap<&str, String>>, i32> {
+        let mut logs = Vec::new();
+
         for _i in 0..11 {
             let ret: libc::c_int;
 
@@ -79,41 +94,78 @@ impl Journal {
                 match self.get_field(field) {
                     Ok(data) => {
                         dic.insert(field, data);
-                    },
-                    Err(_) => {},
+                    }
+                    Err(_) => {}
                 }
             }
 
             logs.push(dic);
         }
-
         Ok(logs)
     }
 
-    pub fn close(&mut self) {
-        unsafe {
-            sd_journal_close(self.ptr);
-        }
-    }
-
-    fn get_field(&self, field: &str) -> Result<&str, i32> {
+    fn get_field(&self, field: &str) -> Result<String, i32> {
         let mut data: *const c_void = std::ptr::null_mut();
         let mut length: size_t = 0;
-        let field = CString::new(field).expect("CString failed");
+        let c_field = CString::new(field).expect("CString failed");
         let ret: libc::c_int;
         unsafe {
-            ret = sd_journal_get_data(self.ptr, field.as_ptr(), &mut data, &mut length);
+            ret = sd_journal_get_data(self.ptr, c_field.as_ptr(), &mut data, &mut length);
         }
         if ret < 0 {
             return Err(ret);
         }
         let result = unsafe {
             match CStr::from_ptr(data as *mut c_char).to_str() {
-                Ok(s) => Ok(s),
+                Ok(s) => {
+                    let s = String::from(s);
+                    let remove = format!("{}=", field);
+                    if let Some(value) = s.strip_prefix(&remove) {
+                        return Ok(value.to_string());
+                    }
+                    Ok(s)
+                }
                 Err(_) => Err(-1),
             }
         };
 
         result
+    }
+
+    fn apply_pid_filter(&self, qb: &QueryBuilder) {
+        if qb.pid > 0 {
+            unsafe {
+                let data = CString::new(format!("_PID={}", qb.pid)).expect("Could not set pid");
+                sd_journal_add_match(self.ptr, data.as_ptr(), 0usize);
+            }
+        }
+    }
+
+    fn apply_minimum_priority(&self, qb: &QueryBuilder) {
+        unsafe {
+            let data = CString::new(format!("PRIORITY={}", qb.minimum_priority))
+                .expect("Could not set priority");
+            sd_journal_add_match(self.ptr, data.as_ptr(), 0usize);
+        }
+    }
+
+    fn apply_unit(&self, qb: &QueryBuilder) {
+        if qb.unit != String::new() {
+            unsafe {
+                let data =
+                    CString::new(format!("_SYSTEMD_UNIT={}", qb.unit)).expect("Could not set unit");
+                sd_journal_add_match(self.ptr, data.as_ptr(), 0usize);
+            }
+        }
+    }
+
+    fn apply_slice(&self, qb: &QueryBuilder) {
+        if qb.slice != String::new() {
+            unsafe {
+                let data = CString::new(format!("_SYSTEMD_SLICE={}", qb.slice))
+                    .expect("Could not set slice");
+                sd_journal_add_match(self.ptr, data.as_ptr(), 0usize);
+            }
+        }
     }
 }
