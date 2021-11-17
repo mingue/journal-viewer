@@ -1,9 +1,9 @@
 use crate::libsdjournal::*;
 use crate::query_builder::QueryBuilder;
 use bitflags::bitflags;
-use libc::{c_char, c_void, size_t};
+use libc::c_void;
+use log::*;
 use std::collections::HashMap;
-use std::ffi::{CStr, CString};
 
 bitflags! {
     #[repr(C)]
@@ -33,28 +33,21 @@ impl Journal {
         sd_journal
     }
 
-    pub fn open(open_flags: OpenFlags) -> Result<Journal, i32> {
-        let ret: libc::c_int;
+    pub fn open(open_flags: OpenFlags) -> Result<Journal, JournalError> {
         let mut journal = Journal::new();
+        sd_journal_open(&mut journal.ptr, open_flags.bits())?;
 
-        unsafe {
-            ret = sd_journal_open(&mut journal.ptr, open_flags.bits());
-        }
-
-        if ret == 0 {
-            return Ok(journal);
-        }
-
-        Err(ret)
+        Ok(journal)
     }
 
-    pub fn get_logs(&self) -> Result<Vec<HashMap<&str, String>>, i32> {
+    pub fn get_logs(&self) -> Result<Vec<HashMap<&str, String>>, JournalError> {
         self.get_logs_internal()
     }
 
-    pub fn query_logs(&self, qb: &QueryBuilder) -> Result<Vec<HashMap<&str, String>>, i32> {
-        let ret: libc::c_int = 0;
-
+    pub fn query_logs(
+        &self,
+        qb: &QueryBuilder,
+    ) -> Result<Vec<HashMap<&str, String>>, JournalError> {
         self.apply_pid_filter(qb);
         self.apply_minimum_priority(qb);
         self.apply_unit(qb);
@@ -63,28 +56,14 @@ impl Journal {
         self.get_logs_internal()
     }
 
-    pub fn close(&mut self) {
-        unsafe {
-            sd_journal_close(self.ptr);
-        }
-    }
-
-    fn get_logs_internal(&self) -> Result<Vec<HashMap<&str, String>>, i32> {
+    fn get_logs_internal(&self) -> Result<Vec<HashMap<&str, String>>, JournalError> {
         let mut logs = Vec::new();
 
         for _i in 0..11 {
-            let ret: libc::c_int;
+            let more = sd_journal_next(self.ptr)?;
 
-            unsafe {
-                ret = sd_journal_next(self.ptr);
-            }
-
-            if ret == 0 {
+            if !more {
                 break;
-            }
-
-            if ret < 0 {
-                return Err(ret);
             }
 
             let fields = ["MESSAGE", "PRIORITY", "_PID", "_COMM", "_UID", "_GID"];
@@ -95,7 +74,7 @@ impl Journal {
                     Ok(data) => {
                         dic.insert(field, data);
                     }
-                    Err(_) => {}
+                    Err(_) => {} // If we can get one field for a log we ignore it
                 }
             }
 
@@ -104,68 +83,47 @@ impl Journal {
         Ok(logs)
     }
 
-    fn get_field(&self, field: &str) -> Result<String, i32> {
-        let mut data: *const c_void = std::ptr::null_mut();
-        let mut length: size_t = 0;
-        let c_field = CString::new(field).expect("CString failed");
-        let ret: libc::c_int;
-        unsafe {
-            ret = sd_journal_get_data(self.ptr, c_field.as_ptr(), &mut data, &mut length);
-        }
-        if ret < 0 {
-            return Err(ret);
-        }
-        let result = unsafe {
-            match CStr::from_ptr(data as *mut c_char).to_str() {
-                Ok(s) => {
-                    let s = String::from(s);
-                    let remove = format!("{}=", field);
-                    if let Some(value) = s.strip_prefix(&remove) {
-                        return Ok(value.to_string());
-                    }
-                    Ok(s)
-                }
-                Err(_) => Err(-1),
-            }
-        };
-
-        result
+    fn get_field(&self, field: &str) -> Result<String, JournalError> {
+        sd_journal_get_data(self.ptr, field)
     }
 
     fn apply_pid_filter(&self, qb: &QueryBuilder) {
         if qb.pid > 0 {
-            unsafe {
-                let data = CString::new(format!("_PID={}", qb.pid)).expect("Could not set pid");
-                sd_journal_add_match(self.ptr, data.as_ptr(), 0usize);
+            let query = String::from(format!("_PID:{}", qb.pid));
+            if let Err(e) = sd_journal_add_match(self.ptr, query) {
+                warn!("Could not apply pid filter {}", e);
             }
         }
     }
 
     fn apply_minimum_priority(&self, qb: &QueryBuilder) {
-        unsafe {
-            let data = CString::new(format!("PRIORITY={}", qb.minimum_priority))
-                .expect("Could not set priority");
-            sd_journal_add_match(self.ptr, data.as_ptr(), 0usize);
+        let query = String::from(format!("PRIORITY={}", qb.minimum_priority));
+        if let Err(e) = sd_journal_add_match(self.ptr, query) {
+            warn!("Could not apply pid filter {}", e);
         }
     }
 
     fn apply_unit(&self, qb: &QueryBuilder) {
         if qb.unit != String::new() {
-            unsafe {
-                let data =
-                    CString::new(format!("_SYSTEMD_UNIT={}", qb.unit)).expect("Could not set unit");
-                sd_journal_add_match(self.ptr, data.as_ptr(), 0usize);
+            let query = String::from(format!("_SYSTEMD_UNIT={}", qb.unit));
+            if let Err(e) = sd_journal_add_match(self.ptr, query) {
+                warn!("Could not apply pid filter {}", e);
             }
         }
     }
 
     fn apply_slice(&self, qb: &QueryBuilder) {
         if qb.slice != String::new() {
-            unsafe {
-                let data = CString::new(format!("_SYSTEMD_SLICE={}", qb.slice))
-                    .expect("Could not set slice");
-                sd_journal_add_match(self.ptr, data.as_ptr(), 0usize);
+            let query = String::from(format!("_SYSTEMD_SLICE={}", qb.slice));
+            if let Err(e) = sd_journal_add_match(self.ptr, query) {
+                warn!("Could not apply pid filter {}", e);
             }
         }
+    }
+}
+
+impl Drop for Journal {
+    fn drop(&mut self) {
+        sd_journal_close(self.ptr);
     }
 }
