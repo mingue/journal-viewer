@@ -2,6 +2,9 @@ mod journal;
 mod libsdjournal;
 mod query_builder;
 
+#[macro_use]
+extern crate log;
+
 use journal::{Journal, OpenFlags};
 use libsdjournal::JournalError;
 use std::collections::HashMap;

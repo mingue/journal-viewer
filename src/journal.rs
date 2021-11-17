@@ -2,7 +2,6 @@ use crate::libsdjournal::*;
 use crate::query_builder::QueryBuilder;
 use bitflags::bitflags;
 use libc::c_void;
-use log::*;
 use std::collections::HashMap;
 
 bitflags! {
