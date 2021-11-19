@@ -72,11 +72,10 @@ impl Journal {
             }
 
             let mut dic = HashMap::new();
-            let fields = qb.fields.clone();
-            for field in fields {
-                match self.get_field(field) {
+            for field in qb.fields.iter() {
+                match self.get_field(*field) {
                     Ok(data) => {
-                        dic.insert(field, data);
+                        dic.insert(*field, data);
                     }
                     Err(e) => {
                         warn!("Could not find the field {}", e);
