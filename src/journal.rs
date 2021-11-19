@@ -1,5 +1,5 @@
 use crate::libsdjournal::*;
-use crate::query_builder::QueryBuilder;
+use crate::query_builder::{fields, QueryBuilder};
 use bitflags::bitflags;
 use libc::c_void;
 use std::collections::HashMap;
@@ -40,23 +40,29 @@ impl Journal {
     }
 
     pub fn get_logs(&self) -> Result<Vec<HashMap<&str, String>>, JournalError> {
-        self.get_logs_internal()
+        let qb = QueryBuilder::default();
+
+        self.get_logs_internal(&qb)
     }
 
     pub fn query_logs(
         &self,
         qb: &QueryBuilder,
     ) -> Result<Vec<HashMap<&str, String>>, JournalError> {
+        self.get_logs_internal(qb)
+    }
+
+    fn get_logs_internal(
+        &self,
+        qb: &QueryBuilder,
+    ) -> Result<Vec<HashMap<&str, String>>, JournalError> {
+        let mut logs = Vec::new();
+
         self.apply_pid_filter(qb);
         self.apply_minimum_priority(qb);
         self.apply_unit(qb);
         self.apply_slice(qb);
-
-        self.get_logs_internal()
-    }
-
-    fn get_logs_internal(&self) -> Result<Vec<HashMap<&str, String>>, JournalError> {
-        let mut logs = Vec::new();
+        self.apply_boot_id(qb);
 
         for _i in 0..11 {
             let more = sd_journal_next(self.ptr)?;
@@ -65,15 +71,16 @@ impl Journal {
                 break;
             }
 
-            let fields = ["MESSAGE", "PRIORITY", "_PID", "_COMM", "_UID", "_GID"];
             let mut dic = HashMap::new();
-
+            let fields = qb.fields.clone();
             for field in fields {
                 match self.get_field(field) {
                     Ok(data) => {
                         dic.insert(field, data);
                     }
-                    Err(_) => {} // If we can get one field for a log we ignore it
+                    Err(e) => {
+                        warn!("Could not find the field {}", e);
+                    }
                 }
             }
 
@@ -88,34 +95,43 @@ impl Journal {
 
     fn apply_pid_filter(&self, qb: &QueryBuilder) {
         if qb.pid > 0 {
-            let query = String::from(format!("_PID:{}", qb.pid));
+            let query = String::from(format!("{}={}", fields::PID, qb.pid));
             if let Err(e) = sd_journal_add_match(self.ptr, query) {
-                warn!("Could not apply pid filter {}", e);
+                warn!("Could not apply filter {}", e);
             }
         }
     }
 
     fn apply_minimum_priority(&self, qb: &QueryBuilder) {
-        let query = String::from(format!("PRIORITY={}", qb.minimum_priority));
+        let query = String::from(format!("{}={}", fields::PRIORITY, qb.minimum_priority));
         if let Err(e) = sd_journal_add_match(self.ptr, query) {
-            warn!("Could not apply pid filter {}", e);
+            warn!("Could not apply filter {}", e);
         }
     }
 
     fn apply_unit(&self, qb: &QueryBuilder) {
-        if qb.unit != String::new() {
-            let query = String::from(format!("_SYSTEMD_UNIT={}", qb.unit));
+        if !qb.unit.is_empty() {
+            let query = String::from(format!("{}={}", fields::SYSTEMD_UNIT, qb.unit));
             if let Err(e) = sd_journal_add_match(self.ptr, query) {
-                warn!("Could not apply pid filter {}", e);
+                warn!("Could not apply filter {}", e);
             }
         }
     }
 
     fn apply_slice(&self, qb: &QueryBuilder) {
-        if qb.slice != String::new() {
-            let query = String::from(format!("_SYSTEMD_SLICE={}", qb.slice));
+        if !qb.slice.is_empty() {
+            let query = String::from(format!("{}={}", fields::SYSTEMD_SLICE, qb.slice));
             if let Err(e) = sd_journal_add_match(self.ptr, query) {
-                warn!("Could not apply pid filter {}", e);
+                warn!("Could not apply filter {}", e);
+            }
+        }
+    }
+
+    fn apply_boot_id(&self, qb: &QueryBuilder) {
+        if !qb.boot_id.is_empty() {
+            let query = String::from(format!("{}={}", fields::BOOT_ID, qb.boot_id));
+            if let Err(e) = sd_journal_add_match(self.ptr, query) {
+                warn!("Could not apply filter {}", e);
             }
         }
     }
