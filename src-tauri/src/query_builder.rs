@@ -5,8 +5,8 @@ pub mod fields {
     pub const PRIORITY: &str = "PRIORITY";
     /// low-level Unix error number causing this entry, if any
     pub const ERRNO: &str = "ERRNO";
-    /// The wallclock time at the point in time the entry was received by the journal, in microseconds since the epoch UTC
-    pub const REALTIME_TIMESTAMP: &str = "__REALTIME_TIMESTAMP";
+    /// This is the time in microseconds since the epoch UTC, formatted as a decimal string
+    pub const SOURCE_REALTIME_TIMESTAMP: &str = "_SOURCE_REALTIME_TIMESTAMP";
 
     /// The process ID of the process the journal entry originates from
     pub const PID: &str = "_PID";
@@ -49,6 +49,8 @@ pub struct QueryBuilder {
     pub(crate) unit: String,
     pub(crate) slice: String,
     pub(crate) boot_id: String,
+    pub(crate) limit: u64,
+    pub(crate) skip: u64,
 }
 
 impl QueryBuilder {
@@ -60,6 +62,8 @@ impl QueryBuilder {
             unit: String::new(),
             slice: String::new(),
             boot_id: String::new(),
+            limit: 100,
+            skip: 0
         };
 
         qb.with_default_fields();
@@ -74,7 +78,7 @@ impl QueryBuilder {
             fields::MESSAGE,
             fields::PRIORITY,
             fields::ERRNO,
-            fields::REALTIME_TIMESTAMP,
+            fields::SOURCE_REALTIME_TIMESTAMP,
             fields::PID,
             fields::UID,
             fields::COMM,

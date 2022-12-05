@@ -1,8 +1,9 @@
+use crate::journal_entries::JournalEntries;
 use crate::libsdjournal::*;
 use crate::query_builder::{fields, QueryBuilder};
 use bitflags::bitflags;
 use libc::c_void;
-use std::collections::HashMap;
+use std::vec;
 
 bitflags! {
     #[repr(C)]
@@ -39,53 +40,63 @@ impl Journal {
         Ok(journal)
     }
 
-    pub fn get_logs(&self) -> Result<Vec<HashMap<&str, String>>, JournalError> {
+    pub fn get_logs(&self) -> Result<JournalEntries, JournalError> {
         let qb = QueryBuilder::default();
 
         self.get_logs_internal(&qb)
     }
 
-    pub fn query_logs(
-        &self,
-        qb: &QueryBuilder,
-    ) -> Result<Vec<HashMap<&str, String>>, JournalError> {
+    pub fn query_logs(&self, qb: &QueryBuilder) -> Result<JournalEntries, JournalError> {
         self.get_logs_internal(qb)
     }
 
-    fn get_logs_internal(
-        &self,
-        qb: &QueryBuilder,
-    ) -> Result<Vec<HashMap<&str, String>>, JournalError> {
-        let mut logs = Vec::new();
-
+    fn get_logs_internal(&self, qb: &QueryBuilder) -> Result<JournalEntries, JournalError> {
         self.apply_pid_filter(qb);
         self.apply_minimum_priority(qb);
         self.apply_unit(qb);
         self.apply_slice(qb);
         self.apply_boot_id(qb);
 
-        for _i in 0..11 {
-            let more = sd_journal_next(self.ptr)?;
+        let mut journal_entries = JournalEntries::new();
 
-            if !more {
+        for field in qb.fields.iter() {
+            journal_entries.headers.push((*field).to_string())
+        }
+
+        sd_journal_seek_tail(self.ptr)?;
+
+        if qb.skip > 0 {
+            sd_journal_previous_skip(self.ptr, qb.skip);
+        }
+
+        let mut count: u64 = 0;
+
+        loop {
+            let more = sd_journal_previous(self.ptr)?;
+            count+=1;
+
+            if !more || (qb.limit > 0 && count >= qb.limit){
                 break;
             }
 
-            let mut dic = HashMap::new();
+            let mut row: Vec<String> = vec![];
+
             for field in qb.fields.iter() {
                 match self.get_field(*field) {
                     Ok(data) => {
-                        dic.insert(*field, data);
+                        row.push(data);
                     }
                     Err(e) => {
+                        row.push(String::new());
                         warn!("Could not find the field {}", e);
                     }
                 }
             }
 
-            logs.push(dic);
+            journal_entries.rows.push(row);
         }
-        Ok(logs)
+
+        Ok(journal_entries)
     }
 
     fn get_field(&self, field: &str) -> Result<String, JournalError> {

@@ -1,41 +1,36 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug",
-      "cargo": {
-        "args": ["build", "--bin=journal-viewer", "--package=journal-viewer"],
-        "filter": {
-          "name": "journal-viewer",
-          "kind": "bin"
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Tauri Development Debug",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--manifest-path=./src-tauri/Cargo.toml",
+                    "--no-default-features"
+                ]
+            },
+            // task for the `beforeDevCommand` if used, must be configured in `.vscode/tasks.json`
+            "preLaunchTask": "ui:dev"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Tauri Production Debug",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--release",
+                    "--manifest-path=./src-tauri/Cargo.toml"
+                ]
+            },
+            // task for the `beforeBuildCommand` if used, must be configured in `.vscode/tasks.json`
+            "preLaunchTask": "ui:build"
         }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug unit tests",
-      "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--bin=journal-viewer",
-          "--package=journal-viewer"
-        ],
-        "filter": {
-          "name": "journal-viewer",
-          "kind": "bin"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
-    }
-  ]
+    ]
 }

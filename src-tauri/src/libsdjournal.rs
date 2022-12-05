@@ -1,8 +1,11 @@
 use libc::{c_char, c_void, size_t};
-use std::{ffi::{CStr, CString}, fmt::Display};
+use std::{
+    ffi::{CStr, CString},
+    fmt::Display,
+};
 
 mod ffi {
-    use libc::{c_char, c_int, c_void, size_t};
+    use libc::{c_char, c_int, c_ulong, c_void, size_t};
 
     extern "C" {
         // int sd_journal_open(sd_journal **ret, int flags);
@@ -13,6 +16,9 @@ mod ffi {
 
         //int sd_journal_next(sd_journal *j);
         pub fn sd_journal_next(sd_journal: *const c_void) -> c_int;
+
+        //int sd_journal_previous(sd_journal *j);
+        pub fn sd_journal_previous(sd_journal: *const c_void) -> c_int;
 
         //int sd_journal_get_data(sd_journal *j, const char *field, const void **data, size_t *length);
         pub fn sd_journal_get_data(
@@ -28,6 +34,18 @@ mod ffi {
             data: *const c_char,
             size: size_t,
         ) -> c_int;
+
+        //int sd_journal_seek_head(sd_journal *j);
+        pub fn sd_journal_seek_head(sd_journal: *const c_void) -> c_int;
+
+        //int sd_journal_seek_tail(sd_journal *j);
+        pub fn sd_journal_seek_tail(sd_journal: *const c_void) -> c_int;
+
+        //int sd_journal_next_skip(sd_journal *j, uint64_t skip);
+        pub fn sd_journal_next_skip(sd_journal: *const c_void, skip: c_ulong) -> c_int;
+
+        //int sd_journal_previous_skip(sd_journal *j, uint64_t skip);
+        pub fn sd_journal_previous_skip(sd_journal: *const c_void, skip: u64) -> c_int;
     }
 }
 
@@ -64,6 +82,51 @@ pub fn sd_journal_next(sd_journal: *const c_void) -> Result<bool, JournalError> 
 
     unsafe {
         ret = ffi::sd_journal_next(sd_journal);
+    }
+
+    if ret < 0 {
+        return Err(JournalError(ret));
+    }
+
+    Ok(ret > 0)
+}
+
+pub fn sd_journal_previous(sd_journal: *const c_void) -> Result<bool, JournalError> {
+    let ret: libc::c_int;
+
+    unsafe {
+        ret = ffi::sd_journal_previous(sd_journal);
+    }
+
+    if ret < 0 {
+        return Err(JournalError(ret));
+    }
+
+    Ok(ret > 0)
+}
+
+pub fn sd_journal_next_skip(sd_journal: *const c_void, skip: u64) -> Result<bool, JournalError> {
+    let ret: libc::c_int;
+
+    unsafe {
+        ret = ffi::sd_journal_next_skip(sd_journal, skip);
+    }
+
+    if ret < 0 {
+        return Err(JournalError(ret));
+    }
+
+    Ok(ret > 0)
+}
+
+pub fn sd_journal_previous_skip(
+    sd_journal: *const c_void,
+    skip: u64,
+) -> Result<bool, JournalError> {
+    let ret: libc::c_int;
+
+    unsafe {
+        ret = ffi::sd_journal_previous_skip(sd_journal, skip);
     }
 
     if ret < 0 {
@@ -118,6 +181,32 @@ pub fn sd_journal_add_match(sd_journal: *const c_void, data: String) -> Result<(
     if ret < 0 {
         return Err(JournalError(ret));
     }
-    
+
+    Ok(())
+}
+
+pub fn sd_journal_seek_head(sd_journal: *const c_void) -> Result<(), JournalError> {
+    let ret: libc::c_int;
+
+    unsafe {
+        ret = ffi::sd_journal_seek_head(sd_journal);
+    }
+    if ret != 0 {
+        return Err(JournalError(ret));
+    }
+
+    Ok(())
+}
+
+pub fn sd_journal_seek_tail(sd_journal: *const c_void) -> Result<(), JournalError> {
+    let ret: libc::c_int;
+
+    unsafe {
+        ret = ffi::sd_journal_seek_tail(sd_journal);
+    }
+    if ret != 0 {
+        return Err(JournalError(ret));
+    }
+
     Ok(())
 }
