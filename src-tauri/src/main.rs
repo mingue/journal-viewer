@@ -13,16 +13,26 @@ extern crate log;
 
 use crate::query_builder::{fields, QueryBuilder};
 use journal::{Journal, OpenFlags};
+use journal_entries::JournalEntries;
+use serde::{Deserialize, Serialize};
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_logs])
+        .invoke_handler(tauri::generate_handler![get_logs, greet])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
+#[derive(Debug, Deserialize)]
+pub struct JournalQuery {
+    fields: Vec<String>,
+    priority: u32,
+    offset: u64,
+    limit: u64,
+}
+
 #[tauri::command]
-fn get_logs() -> String {
+fn get_logs(query: JournalQuery) -> JournalEntries {
     let j = Journal::open(
         OpenFlags::SD_JOURNAL_LOCAL_ONLY
             | OpenFlags::SD_JOURNAL_SYSTEM
@@ -31,10 +41,18 @@ fn get_logs() -> String {
     .unwrap();
 
     let mut qb = QueryBuilder::default();
-    qb.with_fields(vec![fields::SOURCE_REALTIME_TIMESTAMP, fields::MESSAGE]);
-    //qb.with_pid(1);
-
+    //let jQuery: JournalQuery = serde_json::from_str(&query).unwrap();
+    qb.with_fields(query.fields)
+        .with_offset(query.offset)
+        .with_limit(query.limit)
+        .with_priority_above(query.priority)
+        .unwrap();
     let logs = j.query_logs(&qb).unwrap();
 
-    serde_json::to_string(&logs).unwrap()
+    logs
+}
+
+#[tauri::command]
+fn greet(name: &str) -> String {
+    format!("Hello, {}!", name)
 }

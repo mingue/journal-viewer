@@ -1,3 +1,5 @@
+use chrono::offset;
+
 pub mod fields {
     /// human-readable message string for this entry
     pub const MESSAGE: &str = "MESSAGE";
@@ -44,7 +46,7 @@ pub mod fields {
 }
 pub struct QueryBuilder {
     pub(crate) pid: u32,
-    pub(crate) fields: Vec<&'static str>,
+    pub(crate) fields: Vec<String>,
     pub(crate) minimum_priority: u32,
     pub(crate) unit: String,
     pub(crate) slice: String,
@@ -63,7 +65,7 @@ impl QueryBuilder {
             slice: String::new(),
             boot_id: String::new(),
             limit: 100,
-            skip: 0
+            skip: 0,
         };
 
         qb.with_default_fields();
@@ -71,28 +73,28 @@ impl QueryBuilder {
         qb
     }
 
-    pub fn with_default_fields(&mut self) -> &Self {
+    pub fn with_default_fields(&mut self) -> &mut Self {
         self.fields.clear();
 
         self.fields.extend([
-            fields::MESSAGE,
-            fields::PRIORITY,
-            fields::ERRNO,
-            fields::SOURCE_REALTIME_TIMESTAMP,
-            fields::PID,
-            fields::UID,
-            fields::COMM,
-            fields::SYSTEMD_SLICE,
-            fields::SYSTEMD_UNIT,
-            fields::SYSTEMD_CGROUP,
-            fields::BOOT_ID,
-            fields::TRANSPORT,
+            fields::MESSAGE.to_owned(),
+            fields::PRIORITY.to_owned(),
+            fields::ERRNO.to_owned(),
+            fields::SOURCE_REALTIME_TIMESTAMP.to_owned(),
+            fields::PID.to_owned(),
+            fields::UID.to_owned(),
+            fields::COMM.to_owned(),
+            fields::SYSTEMD_SLICE.to_owned(),
+            fields::SYSTEMD_UNIT.to_owned(),
+            fields::SYSTEMD_CGROUP.to_owned(),
+            fields::BOOT_ID.to_owned(),
+            fields::TRANSPORT.to_owned(),
         ]);
 
         self
     }
 
-    pub fn with_fields(&mut self, fields: Vec<&'static str>) -> &Self {
+    pub fn with_fields(&mut self, fields: Vec<String>) -> &mut Self {
         self.fields.clear();
 
         self.fields.extend(fields);
@@ -100,12 +102,22 @@ impl QueryBuilder {
         self
     }
 
-    pub fn with_pid(&mut self, pid: u32) -> &Self {
+    pub fn with_pid(&mut self, pid: u32) -> &mut Self {
         self.pid = pid;
         self
     }
 
-    pub fn with_priority_above(&mut self, minimum_priority: u32) -> Result<&Self, &str> {
+    pub fn with_offset(&mut self, offset: u64) -> &mut Self {
+        self.skip = offset;
+        self
+    }
+
+    pub fn with_limit(&mut self, limit: u64) -> &mut Self {
+        self.limit = limit;
+        self
+    }
+
+    pub fn with_priority_above(&mut self, minimum_priority: u32) -> Result<&mut Self, &str> {
         if minimum_priority > 7 {
             return Err("The highest priority is 7");
         }
@@ -115,7 +127,7 @@ impl QueryBuilder {
         Ok(self)
     }
 
-    pub fn with_unit(&mut self, unit: &str) -> &Self {
+    pub fn with_unit(&mut self, unit: &str) -> &mut Self {
         let mut full_unit: String = String::from(unit);
         if !full_unit.contains(".") {
             full_unit.push_str(".service");
@@ -125,12 +137,12 @@ impl QueryBuilder {
         self
     }
 
-    pub fn within_slice(&mut self, slice: &str) -> &Self {
+    pub fn within_slice(&mut self, slice: &str) -> &mut Self {
         self.slice = String::from(slice);
         self
     }
 
-    pub fn with_boot_id(&mut self, boot_id: &str) -> &Self {
+    pub fn with_boot_id(&mut self, boot_id: &str) -> &mut Self {
         self.boot_id = String::from(boot_id);
         self
     }

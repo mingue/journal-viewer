@@ -46,6 +46,12 @@ mod ffi {
 
         //int sd_journal_previous_skip(sd_journal *j, uint64_t skip);
         pub fn sd_journal_previous_skip(sd_journal: *const c_void, skip: u64) -> c_int;
+
+        //int sd_journal_add_disjunction(sd_journal *j);
+        pub fn sd_journal_add_disjunction(sd_journal: *const c_void) -> c_int;
+
+        //int sd_journal_add_conjunction(sd_journal *j);
+        pub fn sd_journal_add_conjunction(sd_journal: *const c_void) -> c_int;
     }
 }
 
@@ -209,4 +215,32 @@ pub fn sd_journal_seek_tail(sd_journal: *const c_void) -> Result<(), JournalErro
     }
 
     Ok(())
+}
+
+pub fn sd_journal_add_conjunction(sd_journal: *const c_void) -> Result<bool, JournalError> {
+    let ret: libc::c_int;
+
+    unsafe {
+        ret = ffi::sd_journal_add_conjunction(sd_journal);
+    }
+
+    if ret < 0 {
+        return Err(JournalError(ret));
+    }
+
+    Ok(ret > 0)
+}
+
+pub fn sd_journal_add_disjunction(sd_journal: *const c_void) -> Result<bool, JournalError> {
+    let ret: libc::c_int;
+
+    unsafe {
+        ret = ffi::sd_journal_add_disjunction(sd_journal);
+    }
+
+    if ret < 0 {
+        return Err(JournalError(ret));
+    }
+
+    Ok(ret > 0)
 }

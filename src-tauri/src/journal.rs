@@ -66,23 +66,23 @@ impl Journal {
         sd_journal_seek_tail(self.ptr)?;
 
         if qb.skip > 0 {
-            sd_journal_previous_skip(self.ptr, qb.skip);
+            sd_journal_previous_skip(self.ptr, qb.skip).unwrap();
         }
 
         let mut count: u64 = 0;
 
         loop {
             let more = sd_journal_previous(self.ptr)?;
-            count+=1;
+            count += 1;
 
-            if !more || (qb.limit > 0 && count >= qb.limit){
+            if !more || (qb.limit > 0 && count >= qb.limit) {
                 break;
             }
 
             let mut row: Vec<String> = vec![];
 
             for field in qb.fields.iter() {
-                match self.get_field(*field) {
+                match self.get_field(field) {
                     Ok(data) => {
                         row.push(data);
                     }
@@ -113,10 +113,13 @@ impl Journal {
     }
 
     fn apply_minimum_priority(&self, qb: &QueryBuilder) {
-        let query = String::from(format!("{}={}", fields::PRIORITY, qb.minimum_priority));
-        if let Err(e) = sd_journal_add_match(self.ptr, query) {
-            warn!("Could not apply filter {}", e);
+        for p in 0..qb.minimum_priority {
+            let query = String::from(format!("{}={}", fields::PRIORITY, p));
+            if let Err(e) = sd_journal_add_match(self.ptr, query) {
+                warn!("Could not apply filter {}", e);
+            }
         }
+        sd_journal_add_disjunction(self.ptr).unwrap();
     }
 
     fn apply_unit(&self, qb: &QueryBuilder) {
