@@ -1,6 +1,7 @@
 use crate::journal_entries::JournalEntries;
 use crate::libsdjournal::*;
-use crate::query_builder::{fields, QueryBuilder};
+use crate::query_builder::{QueryBuilder};
+use crate::journal_fields;
 use bitflags::bitflags;
 use libc::c_void;
 use std::vec;
@@ -56,6 +57,7 @@ impl Journal {
         self.apply_unit(qb);
         self.apply_slice(qb);
         self.apply_boot_id(qb);
+        self.apply_transports_filter(qb);
 
         let mut journal_entries = JournalEntries::new();
 
@@ -105,26 +107,36 @@ impl Journal {
 
     fn apply_pid_filter(&self, qb: &QueryBuilder) {
         if qb.pid > 0 {
-            let query = String::from(format!("{}={}", fields::PID, qb.pid));
+            let query = String::from(format!("{}={}", journal_fields::PID, qb.pid));
             if let Err(e) = sd_journal_add_match(self.ptr, query) {
                 warn!("Could not apply filter {}", e);
+            }
+        }
+    }
+
+    fn apply_transports_filter(&self, qb: &QueryBuilder) {
+        if qb.transports.len() > 0 {
+            for transport in qb.transports.iter() {
+                let query = String::from(format!("{}={}", journal_fields::TRANSPORT, transport));
+                if let Err(e) = sd_journal_add_match(self.ptr, query) {
+                    warn!("Could not apply filter {}", e);
+                }
             }
         }
     }
 
     fn apply_minimum_priority(&self, qb: &QueryBuilder) {
         for p in 0..qb.minimum_priority {
-            let query = String::from(format!("{}={}", fields::PRIORITY, p));
+            let query = String::from(format!("{}={}", journal_fields::PRIORITY, p));
             if let Err(e) = sd_journal_add_match(self.ptr, query) {
                 warn!("Could not apply filter {}", e);
             }
         }
-        sd_journal_add_disjunction(self.ptr).unwrap();
     }
 
     fn apply_unit(&self, qb: &QueryBuilder) {
         if !qb.unit.is_empty() {
-            let query = String::from(format!("{}={}", fields::SYSTEMD_UNIT, qb.unit));
+            let query = String::from(format!("{}={}", journal_fields::SYSTEMD_UNIT, qb.unit));
             if let Err(e) = sd_journal_add_match(self.ptr, query) {
                 warn!("Could not apply filter {}", e);
             }
@@ -133,7 +145,7 @@ impl Journal {
 
     fn apply_slice(&self, qb: &QueryBuilder) {
         if !qb.slice.is_empty() {
-            let query = String::from(format!("{}={}", fields::SYSTEMD_SLICE, qb.slice));
+            let query = String::from(format!("{}={}", journal_fields::SYSTEMD_SLICE, qb.slice));
             if let Err(e) = sd_journal_add_match(self.ptr, query) {
                 warn!("Could not apply filter {}", e);
             }
@@ -142,7 +154,7 @@ impl Journal {
 
     fn apply_boot_id(&self, qb: &QueryBuilder) {
         if !qb.boot_id.is_empty() {
-            let query = String::from(format!("{}={}", fields::BOOT_ID, qb.boot_id));
+            let query = String::from(format!("{}={}", journal_fields::BOOT_ID, qb.boot_id));
             if let Err(e) = sd_journal_add_match(self.ptr, query) {
                 warn!("Could not apply filter {}", e);
             }

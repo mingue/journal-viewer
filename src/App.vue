@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { reactive } from "vue";
-import { invoke } from '@tauri-apps/api'
+import { invoke } from "@tauri-apps/api";
 
 let vm = reactive({
   logs: {} as JournalEntries,
 });
 
 type JournalEntries = {
-  headers: Array<string>,
-  rows: Array<Array<string>>
-}
+  headers: Array<string>;
+  rows: Array<Array<string>>;
+};
 
 const JournalQuery = {
   fields: [
@@ -17,25 +17,22 @@ const JournalQuery = {
     "PRIORITY",
     "_COMM",
     "MESSAGE",
+    "_TRANSPORT",
   ],
   priority: 5,
   offset: 0,
-  limit: 1000
-}
+  limit: 100,
+};
 
 invoke<JournalEntries>("get_logs", {
-  query: JournalQuery
-})
-  .then((response) => {
-    vm.logs = response;
-  });
+  query: JournalQuery,
+}).then((response) => {
+  vm.logs = response;
+});
 </script>
 
 <template>
-  <header>
-
-  </header>
-
+  <header></header>
   <main>
     <div class="container-fluid">
       <table class="table table-striped table-hover table-borderless table-sm">
@@ -46,9 +43,11 @@ invoke<JournalEntries>("get_logs", {
         </thead>
         <tbody class="table-group-divider">
           <tr v-for="logEntry in vm.logs.rows">
-            <td v-for="(field, index) in logEntry">
+            <td v-for="field in logEntry">
               <span :title="field">
-                {{ field.length > 500 ? field.substring(0, 500) + "..." : field }}
+                {{
+                  field.length > 500 ? field.substring(0, 500) + "..." : field
+                }}
               </span>
             </td>
           </tr>

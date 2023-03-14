@@ -1,49 +1,5 @@
-use chrono::offset;
+use crate::journal_fields;
 
-pub mod fields {
-    /// human-readable message string for this entry
-    pub const MESSAGE: &str = "MESSAGE";
-    /// priority value between 0 ("emerg") and 7 ("debug")
-    pub const PRIORITY: &str = "PRIORITY";
-    /// low-level Unix error number causing this entry, if any
-    pub const ERRNO: &str = "ERRNO";
-    /// This is the time in microseconds since the epoch UTC, formatted as a decimal string
-    pub const SOURCE_REALTIME_TIMESTAMP: &str = "_SOURCE_REALTIME_TIMESTAMP";
-
-    /// The process ID of the process the journal entry originates from
-    pub const PID: &str = "_PID";
-    /// The user ID of the process the journal entry originates from
-    pub const UID: &str = "_UID";
-    /// The group ID of the process the journal entry originates from
-    pub const GID: &str = "_GID";
-
-    /// The name of the process
-    pub const COMM: &str = "_COMM";
-    /// the executable path
-    pub const EXE: &str = "_EXE";
-    /// command line of the process
-    pub const CMDLINE: &str = "_CMDLINE";
-
-    /// the systemd slice unit name
-    pub const SYSTEMD_SLICE: &str = "_SYSTEMD_SLICE";
-    /// the systemd unit name
-    pub const SYSTEMD_UNIT: &str = "_SYSTEMD_UNIT";
-    /// The control group path in the systemd hierarchy
-    pub const SYSTEMD_CGROUP: &str = "_SYSTEMD_CGROUP";
-
-    /// The kernel boot ID
-    pub const BOOT_ID: &str = "_BOOT_ID";
-
-    /// How the entry was received by the journal service
-    /// Valid transports are:
-    ///   audit: for those read from the kernel audit subsystem
-    ///   driver: for internally generated messages
-    ///   syslog: for those received via the local syslog socket
-    ///   journal: for those received via the native journal protocol
-    ///   stdout: for those read from a service's standard output or error output
-    ///   kernel: for those read from the kernel
-    pub const TRANSPORT: &str = "_TRANSPORT";
-}
 pub struct QueryBuilder {
     pub(crate) pid: u32,
     pub(crate) fields: Vec<String>,
@@ -53,6 +9,7 @@ pub struct QueryBuilder {
     pub(crate) boot_id: String,
     pub(crate) limit: u64,
     pub(crate) skip: u64,
+    pub(crate) transports: Vec<String>
 }
 
 impl QueryBuilder {
@@ -66,8 +23,14 @@ impl QueryBuilder {
             boot_id: String::new(),
             limit: 100,
             skip: 0,
+            transports: vec![
+                "driver".into(),
+                "syslog".into(),
+                "journal".into(),
+                "stdout".into()
+            ],
         };
-
+        
         qb.with_default_fields();
 
         qb
@@ -77,18 +40,18 @@ impl QueryBuilder {
         self.fields.clear();
 
         self.fields.extend([
-            fields::MESSAGE.to_owned(),
-            fields::PRIORITY.to_owned(),
-            fields::ERRNO.to_owned(),
-            fields::SOURCE_REALTIME_TIMESTAMP.to_owned(),
-            fields::PID.to_owned(),
-            fields::UID.to_owned(),
-            fields::COMM.to_owned(),
-            fields::SYSTEMD_SLICE.to_owned(),
-            fields::SYSTEMD_UNIT.to_owned(),
-            fields::SYSTEMD_CGROUP.to_owned(),
-            fields::BOOT_ID.to_owned(),
-            fields::TRANSPORT.to_owned(),
+            journal_fields::MESSAGE.to_owned(),
+            journal_fields::PRIORITY.to_owned(),
+            journal_fields::ERRNO.to_owned(),
+            journal_fields::SOURCE_REALTIME_TIMESTAMP.to_owned(),
+            journal_fields::PID.to_owned(),
+            journal_fields::UID.to_owned(),
+            journal_fields::COMM.to_owned(),
+            journal_fields::SYSTEMD_SLICE.to_owned(),
+            journal_fields::SYSTEMD_UNIT.to_owned(),
+            journal_fields::SYSTEMD_CGROUP.to_owned(),
+            journal_fields::BOOT_ID.to_owned(),
+            journal_fields::TRANSPORT.to_owned(),
         ]);
 
         self
@@ -99,6 +62,11 @@ impl QueryBuilder {
 
         self.fields.extend(fields);
 
+        self
+    }
+
+    pub fn with_transports(&mut self, transports: Vec<String>) -> &mut Self {
+        self.transports = transports;
         self
     }
 
@@ -117,14 +85,14 @@ impl QueryBuilder {
         self
     }
 
-    pub fn with_priority_above(&mut self, minimum_priority: u32) -> Result<&mut Self, &str> {
+    pub fn with_priority_above(&mut self, minimum_priority: u32) -> &mut Self {
         if minimum_priority > 7 {
-            return Err("The highest priority is 7");
+            self.minimum_priority = 7;
+        } else {
+            self.minimum_priority = minimum_priority;
         }
 
-        self.minimum_priority = minimum_priority;
-
-        Ok(self)
+        self
     }
 
     pub fn with_unit(&mut self, unit: &str) -> &mut Self {

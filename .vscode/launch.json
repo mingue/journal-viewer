@@ -15,6 +15,9 @@
                     "--no-default-features"
                 ]
             },
+            "env": {
+                "RUST_LOG": "debug"
+            },
             // task for the `beforeDevCommand` if used, must be configured in `.vscode/tasks.json`
             "preLaunchTask": "ui:dev"
         },
@@ -28,6 +31,9 @@
                     "--release",
                     "--manifest-path=./src-tauri/Cargo.toml"
                 ]
+            },
+            "env": {
+                "RUST_LOG": "info"
             },
             // task for the `beforeBuildCommand` if used, must be configured in `.vscode/tasks.json`
             "preLaunchTask": "ui:build"
