@@ -9,10 +9,10 @@ pub struct JournalEntries {
 }
 
 impl JournalEntries {
-    pub fn new() -> JournalEntries {
+    pub fn new(lenght: usize) -> JournalEntries {
         JournalEntries{
             headers: vec![],
-            rows: vec![vec![]]
+            rows: Vec::with_capacity(lenght)
         }
     }
 }

@@ -56,7 +56,7 @@ fn get_logs(query: JournalQuery) -> JournalEntries {
     qb.with_fields(query.fields)
         .with_offset(query.offset)
         .with_limit(query.limit)
-        .with_priority_above(query.priority);
+        .with_priority_above_or_equal_to(query.priority);
 
     let logs = j.query_logs(&qb).unwrap();
     debug!("Found {} entries.", logs.rows.len());

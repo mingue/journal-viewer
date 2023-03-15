@@ -1,7 +1,7 @@
 use crate::journal_entries::JournalEntries;
-use crate::libsdjournal::*;
-use crate::query_builder::{QueryBuilder};
 use crate::journal_fields;
+use crate::libsdjournal::*;
+use crate::query_builder::QueryBuilder;
 use bitflags::bitflags;
 use libc::c_void;
 use std::vec;
@@ -59,7 +59,7 @@ impl Journal {
         self.apply_boot_id(qb);
         self.apply_transports_filter(qb);
 
-        let mut journal_entries = JournalEntries::new();
+        let mut journal_entries = JournalEntries::new(qb.limit as usize);
 
         for field in qb.fields.iter() {
             journal_entries.headers.push((*field).to_string())
@@ -81,7 +81,7 @@ impl Journal {
                 break;
             }
 
-            let mut row: Vec<String> = vec![];
+            let mut row: Vec<String> = Vec::with_capacity(qb.fields.len());
 
             for field in qb.fields.iter() {
                 match self.get_field(field) {
@@ -126,7 +126,7 @@ impl Journal {
     }
 
     fn apply_minimum_priority(&self, qb: &QueryBuilder) {
-        for p in 0..qb.minimum_priority {
+        for p in 0..=qb.minimum_priority {
             let query = String::from(format!("{}={}", journal_fields::PRIORITY, p));
             if let Err(e) = sd_journal_add_match(self.ptr, query) {
                 warn!("Could not apply filter {}", e);

@@ -9,7 +9,7 @@ pub struct QueryBuilder {
     pub(crate) boot_id: String,
     pub(crate) limit: u64,
     pub(crate) skip: u64,
-    pub(crate) transports: Vec<String>
+    pub(crate) transports: Vec<String>,
 }
 
 impl QueryBuilder {
@@ -27,10 +27,10 @@ impl QueryBuilder {
                 "driver".into(),
                 "syslog".into(),
                 "journal".into(),
-                "stdout".into()
+                "stdout".into(),
             ],
         };
-        
+
         qb.with_default_fields();
 
         qb
@@ -85,7 +85,7 @@ impl QueryBuilder {
         self
     }
 
-    pub fn with_priority_above(&mut self, minimum_priority: u32) -> &mut Self {
+    pub fn with_priority_above_or_equal_to(&mut self, minimum_priority: u32) -> &mut Self {
         if minimum_priority > 7 {
             self.minimum_priority = 7;
         } else {
