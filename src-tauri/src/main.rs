@@ -14,6 +14,7 @@ mod query_builder;
 extern crate log;
 
 use crate::query_builder::QueryBuilder;
+use chrono::{Duration, Utc};
 use env_logger::Env;
 use journal::{Journal, OpenFlags};
 use journal_entries::JournalEntries;
@@ -28,7 +29,7 @@ fn main() {
 
     info!("Starting journal logger");
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_logs, greet])
+        .invoke_handler(tauri::generate_handler![get_logs, greet, get_logs_summary])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -52,10 +53,34 @@ fn get_logs(query: JournalQuery) -> JournalEntries {
     .unwrap();
 
     let mut qb = QueryBuilder::default();
-    //let jQuery: JournalQuery = serde_json::from_str(&query).unwrap();
     qb.with_fields(query.fields)
         .with_offset(query.offset)
         .with_limit(query.limit)
+        .with_priority_above_or_equal_to(query.priority);
+
+    let logs = j.query_logs(&qb).unwrap();
+    debug!("Found {} entries.", logs.rows.len());
+
+    logs
+}
+
+#[tauri::command]
+fn get_logs_summary(query: JournalQuery) -> JournalEntries {
+    debug!("Getting logs...");
+    let j = Journal::open(
+        OpenFlags::SD_JOURNAL_LOCAL_ONLY
+            | OpenFlags::SD_JOURNAL_SYSTEM
+            | OpenFlags::SD_JOURNAL_CURRENT_USER,
+    )
+    .unwrap();
+
+    let mut qb = QueryBuilder::default();
+    let mut yesterday = Utc::now();
+    yesterday = yesterday.checked_add_signed(Duration::days(-1)).unwrap();
+    qb.with_fields(vec![journal_fields::SOURCE_REALTIME_TIMESTAMP.into()])
+        .with_offset(query.offset)
+        .with_limit(20_000)
+        .with_date_from(yesterday.timestamp_micros() as u64)
         .with_priority_above_or_equal_to(query.priority);
 
     let logs = j.query_logs(&qb).unwrap();

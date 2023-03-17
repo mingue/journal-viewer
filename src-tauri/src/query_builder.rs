@@ -8,6 +8,7 @@ pub struct QueryBuilder {
     pub(crate) slice: String,
     pub(crate) boot_id: String,
     pub(crate) limit: u64,
+    pub(crate) fromEpoch: u64,
     pub(crate) skip: u64,
     pub(crate) transports: Vec<String>,
 }
@@ -29,6 +30,7 @@ impl QueryBuilder {
                 "journal".into(),
                 "stdout".into(),
             ],
+            fromEpoch: 0
         };
 
         qb.with_default_fields();
@@ -82,6 +84,11 @@ impl QueryBuilder {
 
     pub fn with_limit(&mut self, limit: u64) -> &mut Self {
         self.limit = limit;
+        self
+    }
+
+    pub fn with_date_from(&mut self, fromEpoch: u64) -> &mut Self {
+        self.fromEpoch = fromEpoch;
         self
     }
 

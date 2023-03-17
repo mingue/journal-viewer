@@ -4,7 +4,6 @@ use crate::libsdjournal::*;
 use crate::query_builder::QueryBuilder;
 use bitflags::bitflags;
 use libc::c_void;
-use std::vec;
 
 bitflags! {
     #[repr(C)]
@@ -72,12 +71,28 @@ impl Journal {
         }
 
         let mut count: u64 = 0;
+        let mut last_timestamp: u64 = 0;
 
         loop {
             let more = sd_journal_previous(self.ptr)?;
+            if let Ok(updated_timestamp) = self.get_field(journal_fields::SOURCE_REALTIME_TIMESTAMP)
+            {
+                last_timestamp = updated_timestamp.parse().unwrap();
+            }
             count += 1;
 
-            if !more || (qb.limit > 0 && count >= qb.limit) {
+            if !more {
+                debug!("No more entries");
+                break;
+            }
+
+            if qb.limit > 0 && count >= qb.limit {
+                debug!("Reached limit of {}", qb.limit);
+                break;
+            }
+
+            if qb.fromEpoch > 0 && qb.fromEpoch >= last_timestamp {
+                debug!("Reached epoch time of {}", qb.fromEpoch);
                 break;
             }
 

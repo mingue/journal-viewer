@@ -18,6 +18,7 @@
             "env": {
                 "RUST_LOG": "debug",
                 "TAURI_DEBUG": "true",
+                "RUST_BACKTRACE": "1",
             },
             // task for the `beforeDevCommand` if used, must be configured in `.vscode/tasks.json`
             "preLaunchTask": "ui:dev"
