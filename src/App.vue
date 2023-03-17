@@ -100,7 +100,6 @@ let maxSummaryValue = 0;
 invoke<JournalEntries>("get_logs_summary", {
   query: JournalQuery,
 }).then((response) => {
-
   // Set timestamp to blocks of 15m
   let logEntries = response.rows.map((r) =>
     Math.floor(Math.floor(parseInt(r[0]) / 1_000_000) / 900)
@@ -164,10 +163,7 @@ const xLegendDateFormat = {
 const getXLegendDate = (x: string, index: number) => {
   try {
     let date = new Date(parseInt(x));
-    if (
-      index == 0 ||
-      date.getHours() < Math.floor(10 / 4)
-    ) {
+    if (index == 0 || date.getHours() < Math.floor(10 / 4)) {
       return date.toLocaleString(undefined, xLegendDateFormat);
     }
     return date.toLocaleString(undefined, xLegendShortFormat);
@@ -183,18 +179,26 @@ const getXLegendDate = (x: string, index: number) => {
     <!-- Summary bar -->
     <div class="d-flex container-fluid summary-bar justify-content-end">
       <div class="summary-y-legend d-flex flex-column">
-        <div class="flex-fill y-legend">{{ Math.round(maxSummaryValue * 100 / 100) }}</div>
-        <div class="flex-fill y-legend">{{ Math.round(maxSummaryValue * 75 / 100) }}</div>
-        <div class="flex-fill y-legend">{{ Math.round(maxSummaryValue * 25 / 100) }}</div>
+        <div class="flex-fill y-legend">
+          {{ Math.round((maxSummaryValue * 100) / 100) }}
+        </div>
+        <div class="flex-fill y-legend">
+          &nbsp;
+        </div>
+        <div class="flex-fill y-legend">
+          {{ Math.round((maxSummaryValue * 50) / 100) }}
+        </div>
+        <div class="flex-fill y-legend">
+          &nbsp;
+        </div>
       </div>
       <div class="flex-fill summary-cell" v-for="v, k, index in vm.logSummaryEntries"
         :title="`Date: ${getSummaryDate(k)}, Value: ${v}`">
-
-        <div class="summary-value" :style="{ height: v / maxSummaryValue * 100 + '%' }">
+        <div class="summary-value" :style="{ height: (v / maxSummaryValue) * 100 + '%' }">
           &nbsp;
         </div>
 
-        <div class="summary-x-legend" :class="{ 'visible': (index % 10 == 0), 'invisible': (index % 10 != 0) }">
+        <div class="summary-x-legend" :class="{ visible: index % 10 == 0, invisible: index % 10 != 0 }">
           {{ getXLegendDate(k, index) }}
         </div>
       </div>
@@ -211,7 +215,9 @@ const getXLegendDate = (x: string, index: number) => {
           <tr v-for="row in vm.logs.rows" :class=getRowClass(row)>
             <td v-for="c in columnViewOptions.filter(x => x.visible)">
               <div :title="row[c.index]">
-                {{ c.formatFn != null ? c.formatFn(row[c.index]) : row[c.index] }}
+                {{
+                  c.formatFn != null ? c.formatFn(row[c.index]) : row[c.index]
+                }}
               </div>
             </td>
           </tr>
@@ -325,6 +331,7 @@ const getXLegendDate = (x: string, index: number) => {
 
 .summary-cell:hover {
   background-color: #ddd;
+  opacity: 0.6;
 }
 
 .summary-value {
@@ -340,6 +347,7 @@ const getXLegendDate = (x: string, index: number) => {
 
 .summary-cell:hover .summary-value {
   background-color: rgb(230, 76, 76);
+  opacity: 1;
 }
 
 .summary-x-legend {
