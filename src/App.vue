@@ -346,7 +346,7 @@ const getXLegendDate = (x: string, index: number) => {
 }
 
 .summary-cell:hover .summary-value {
-  background-color: rgb(230, 76, 76);
+  background-color: rgb(255, 0, 0);
   opacity: 1;
 }
 
@@ -354,7 +354,7 @@ const getXLegendDate = (x: string, index: number) => {
   position: absolute;
   bottom: -50px;
   rotate: 30deg;
-  font-size: 0.8rem;
+  font-size: 0.6rem;
   text-align: left;
   width: 100px;
 }
