@@ -66,7 +66,7 @@ fn get_logs(query: JournalQuery) -> JournalEntries {
 
 #[tauri::command]
 fn get_logs_summary(query: JournalQuery) -> JournalEntries {
-    debug!("Getting logs...");
+    debug!("Getting summary...");
     let j = Journal::open(
         OpenFlags::SD_JOURNAL_LOCAL_ONLY
             | OpenFlags::SD_JOURNAL_SYSTEM
@@ -74,13 +74,12 @@ fn get_logs_summary(query: JournalQuery) -> JournalEntries {
     )
     .unwrap();
 
+    let from = Utc::now() - Duration::days(2);
     let mut qb = QueryBuilder::default();
-    let mut yesterday = Utc::now();
-    yesterday = yesterday.checked_add_signed(Duration::days(-1)).unwrap();
     qb.with_fields(vec![journal_fields::SOURCE_REALTIME_TIMESTAMP.into()])
         .with_offset(query.offset)
         .with_limit(20_000)
-        .with_date_from(yesterday.timestamp_micros() as u64)
+        .with_date_from(from.timestamp_micros() as u64)
         .with_priority_above_or_equal_to(query.priority);
 
     let logs = j.query_logs(&qb).unwrap();

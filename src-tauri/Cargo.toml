@@ -1,28 +1,28 @@
 [package]
-authors = ["you"]
+authors = ["Victor Mingueza"]
 default-run = "app"
-description = "A Tauri App"
+description = "Journald viewer"
 edition = "2021"
-license = ""
+license = "Apache 2.0"
 name = "app"
 repository = ""
-rust-version = "1.59"
+rust-version = "1.68"
 version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = {version = "1.2.1", features = [] }
+tauri-build = {version = "1.2", features = []}
 
 [dependencies]
-bitflags = "2.0.0"
-chrono = "0.4.23"
-env_logger = "0.10.0"
+bitflags = "2"
+chrono = "0.4"
+env_logger = "0.10"
 libc = "0.2"
 log = "0.4"
-serde = {version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tauri = {version = "1.2.1", features = [] }
+serde = {version = "1", features = ["derive"]}
+serde_json = "1"
+tauri = {version = "1.2", features = []}
 
 [features]
 # by default Tauri runs in production mode

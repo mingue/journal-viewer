@@ -5,40 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "lldb",
+            "command": "npm run tauri dev",
+            "name": "tauri dev",
             "request": "launch",
-            "name": "Tauri Development Debug",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--manifest-path=./src-tauri/Cargo.toml",
-                    "--no-default-features"
-                ]
-            },
-            "env": {
-                "RUST_LOG": "debug",
-                "TAURI_DEBUG": "true",
-                "RUST_BACKTRACE": "1",
-            },
-            // task for the `beforeDevCommand` if used, must be configured in `.vscode/tasks.json`
-            "preLaunchTask": "ui:dev"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Tauri Production Debug",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--release",
-                    "--manifest-path=./src-tauri/Cargo.toml"
-                ]
-            },
-            "env": {
-                "RUST_LOG": "info"
-            },
-            // task for the `beforeBuildCommand` if used, must be configured in `.vscode/tasks.json`
-            "preLaunchTask": "ui:build"
+            "type": "node-terminal"
         }
     ]
 }
