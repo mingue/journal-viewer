@@ -43,7 +43,7 @@ pub struct JournalQuery {
 }
 
 #[tauri::command]
-fn get_logs(query: JournalQuery) -> JournalEntries {
+async fn get_logs(query: JournalQuery) -> JournalEntries {
     debug!("Getting logs...");
     let j = Journal::open(
         OpenFlags::SD_JOURNAL_LOCAL_ONLY
@@ -65,7 +65,7 @@ fn get_logs(query: JournalQuery) -> JournalEntries {
 }
 
 #[tauri::command]
-fn get_logs_summary(query: JournalQuery) -> JournalEntries {
+async fn get_logs_summary(query: JournalQuery) -> JournalEntries {
     debug!("Getting summary...");
     let j = Journal::open(
         OpenFlags::SD_JOURNAL_LOCAL_ONLY
@@ -74,11 +74,11 @@ fn get_logs_summary(query: JournalQuery) -> JournalEntries {
     )
     .unwrap();
 
-    let from = Utc::now() - Duration::days(2);
+    let from = Utc::now() - Duration::days(1);
     let mut qb = QueryBuilder::default();
     qb.with_fields(vec![journal_fields::SOURCE_REALTIME_TIMESTAMP.into()])
         .with_offset(query.offset)
-        .with_limit(20_000)
+        .with_limit(10_000)
         .with_date_from(from.timestamp_micros() as u64)
         .with_priority_above_or_equal_to(query.priority);
 
