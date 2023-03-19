@@ -40,6 +40,7 @@ pub struct JournalQuery {
     priority: u32,
     offset: u64,
     limit: u64,
+    quickSearch: String
 }
 
 #[tauri::command]
@@ -56,6 +57,7 @@ async fn get_logs(query: JournalQuery) -> JournalEntries {
     qb.with_fields(query.fields)
         .with_offset(query.offset)
         .with_limit(query.limit)
+        .with_quick_search(query.quickSearch)
         .with_priority_above_or_equal_to(query.priority);
 
     let logs = j.query_logs(&qb).unwrap();

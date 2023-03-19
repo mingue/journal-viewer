@@ -11,6 +11,7 @@ pub struct QueryBuilder {
     pub(crate) fromEpoch: u64,
     pub(crate) skip: u64,
     pub(crate) transports: Vec<String>,
+    pub(crate) quickSearch: String,
 }
 
 impl QueryBuilder {
@@ -30,7 +31,8 @@ impl QueryBuilder {
                 "journal".into(),
                 "stdout".into(),
             ],
-            fromEpoch: 0
+            fromEpoch: 0,
+            quickSearch: "".into()
         };
 
         qb.with_default_fields();
@@ -84,6 +86,11 @@ impl QueryBuilder {
 
     pub fn with_limit(&mut self, limit: u64) -> &mut Self {
         self.limit = limit;
+        self
+    }
+
+    pub fn with_quick_search(&mut self, quickSearch: String) -> &mut Self {
+        self.quickSearch = quickSearch.to_lowercase();
         self
     }
 

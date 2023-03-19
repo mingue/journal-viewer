@@ -79,7 +79,14 @@ impl Journal {
             {
                 last_timestamp = updated_timestamp.parse().unwrap();
             }
-            count += 1;
+
+            if !qb.quickSearch.is_empty() {
+                if let Ok(message) = self.get_field(journal_fields::MESSAGE) {
+                    if !message.to_lowercase().contains(&qb.quickSearch) {
+                        continue;
+                    }
+                }
+            }
 
             if !more {
                 debug!("No more entries");
@@ -111,6 +118,7 @@ impl Journal {
             }
 
             journal_entries.rows.push(row);
+            count += 1;
         }
 
         Ok(journal_entries)

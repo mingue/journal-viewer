@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { reactive } from "vue";
+import { reactive, VueElement, type Events } from "vue";
 import { invoke } from "@tauri-apps/api";
 
 let vm = reactive({
   logs: {} as JournalEntries,
   logSummaryEntries: {} as Record<string, number>,
+  isSidebarCollapsed: true,
+  priority: "6",
+  quickSearch: "",
 });
 
 type JournalEntries = {
@@ -12,7 +15,7 @@ type JournalEntries = {
   rows: Array<Array<string>>;
 };
 
-const JournalQuery = {
+let JournalQuery = {
   fields: [
     "PRIORITY",
     "_SOURCE_REALTIME_TIMESTAMP",
@@ -20,7 +23,8 @@ const JournalQuery = {
     "MESSAGE",
     "_TRANSPORT",
   ],
-  priority: 7,
+  priority: parseInt(vm.priority),
+  quickSearch: vm.quickSearch,
   offset: 0,
   limit: 100,
 };
@@ -89,11 +93,25 @@ columnViewOptions.forEach((c, i) => {
   c.index = i;
 });
 
-invoke<JournalEntries>("get_logs", {
-  query: JournalQuery,
-}).then((response) => {
-  vm.logs = response;
-});
+function getLogs(event?: Event) {
+  if (event != null) {
+    event.preventDefault();
+  }
+
+  vm.isSidebarCollapsed = true;
+
+  let query = JournalQuery;
+  query.priority = parseInt(vm.priority);
+  query.quickSearch = vm.quickSearch;
+
+  invoke<JournalEntries>("get_logs", {
+    query: JournalQuery,
+  }).then((response) => {
+    vm.logs = response;
+  });
+}
+
+getLogs();
 
 let maxSummaryValue = 0;
 
@@ -171,6 +189,16 @@ const getXLegendDate = (x: string, index: number) => {
     return x;
   }
 };
+
+function toggleSidebar(event: Event) {
+  event.preventDefault();
+
+  if (vm.isSidebarCollapsed) {
+    vm.isSidebarCollapsed = false;
+  } else {
+    vm.isSidebarCollapsed = true;
+  }
+}
 </script>
 
 <template>
@@ -203,26 +231,85 @@ const getXLegendDate = (x: string, index: number) => {
         </div>
       </div>
     </div>
-    <!-- Log table -->
-    <div class="container-fluid">
-      <table class="table table-striped table-hover table-borderless table-sm">
-        <thead>
-          <th v-for="c in columnViewOptions.filter(x => x.visible)">
-            {{ c.name }}
-          </th>
-        </thead>
-        <tbody class="table-group-divider">
-          <tr v-for="row in vm.logs.rows" :class=getRowClass(row)>
-            <td v-for="c in columnViewOptions.filter(x => x.visible)">
-              <div :title="row[c.index]">
-                {{
-                  c.formatFn != null ? c.formatFn(row[c.index]) : row[c.index]
-                }}
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Quick Search -->
+    <nav class="navbar bg-body-tertiary">
+      <div class="container-fluid" style="border: 1px solid #ddd; padding: 1rem;">
+        <a class="navbar-brand">Quick Search</a>
+        <form class="d-flex" role="search">
+          <input class="form-control me-2" type="search" v-model="vm.quickSearch" aria-label="Search">
+          <button class="btn btn-outline-primary" type="submit" @click="getLogs">Search</button>
+        </form>
+      </div>
+    </nav>
+    <!-- Main Content -->
+    <div class="d-flex">
+      <div class="flex">
+        <!-- Filter menu -->
+        <div class="d-flex flex-column flex-shrink-0" @click="toggleSidebar">
+          <ul class="nav nav-pills nav-flush flex-column mb-auto text-center">
+            <li class="nav-item">
+              <a href="#" class="nav-link py-3 border-bottom rounded-0" :class="{ 'active': !vm.isSidebarCollapsed }"
+                aria-current="page" data-bs-toggle="tooltip" data-bs-placement="right" aria-label="Home"
+                data-bs-original-title="Home">
+                <i class="bi bi-funnel"></i>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="flex filter-content" :class="{ 'd-none': vm.isSidebarCollapsed }">
+        <!-- Filter content -->
+        <form>
+          <div class="mb-3">
+            <label for="priority" class="form-label">Priority</label>
+            <select id="priority" v-model="vm.priority" class="form-select" aria-describedby="priorityHelp">
+              <option value="0">0 - Emergency</option>
+              <option value="1">1 - Alert</option>
+              <option value="2">2 - Critical</option>
+              <option value="3">3 - Error</option>
+              <option value="4">4 - Warning</option>
+              <option value="5">5 - Notice</option>
+              <option value="6">6 - Informational</option>
+              <option value="7">7 - Debug</option>
+            </select>
+            <div id="priorityHelp" class="form-text">Higher or equal to</div>
+          </div>
+          <!-- 
+                                            <div class="mb-3">
+                                              <label for="exampleInputPassword1" class="form-label">Password</label>
+                                              <input type="password" class="form-control" id="exampleInputPassword1">
+                                            </div>
+                                            <div class="mb-3 form-check">
+                                              <input type="checkbox" class="form-check-input" id="exampleCheck1">
+                                              <label class="form-check-label" for="exampleCheck1">Check me out</label>
+                                            </div> 
+                                          -->
+          <button type="submit" class="btn btn-outline-primary" @click="getLogs">Filter</button>
+        </form>
+      </div>
+      <div class="flex-fill">
+        <!-- Log table -->
+        <div class="container-fluid">
+          <table class="table table-striped table-hover table-borderless table-sm">
+            <thead>
+              <th v-for="c in columnViewOptions.filter(x => x.visible)">
+                {{ c.name }}
+              </th>
+            </thead>
+            <tbody class="table-group-divider">
+              <tr v-for="row in vm.logs.rows" :class=getRowClass(row)>
+                <td v-for="c in columnViewOptions.filter(x => x.visible)">
+                  <div :title="row[c.index]">
+                    {{
+                      c.formatFn != null ? c.formatFn(row[c.index]) : row[c.index]
+                    }}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </main>
 </template>
@@ -357,5 +444,10 @@ const getXLegendDate = (x: string, index: number) => {
   font-size: 0.6rem;
   text-align: left;
   width: 100px;
+}
+
+.filter-content {
+  width: 20rem;
+  padding: 1rem;
 }
 </style>
