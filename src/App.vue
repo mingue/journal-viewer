@@ -29,6 +29,7 @@ type ColumnViewOptions = {
   formatFn: (val: string) => string;
   visible: boolean;
   index: number;
+  style: any;
 };
 
 type EntriesPerBlockOfTime = Record<string, number>;
@@ -46,6 +47,7 @@ const columnViewOptions = [
     name: "", // Priority
     formatFn: () => " ",
     visible: true,
+    style: {},
   },
   {
     name: "Time",
@@ -60,11 +62,13 @@ const columnViewOptions = [
       return epochTime;
     },
     visible: true,
+    style: { width: "8rem" },
   },
   {
     name: "Process",
     formatFn: null,
     visible: true,
+    style: {},
   },
   {
     name: "Message",
@@ -76,11 +80,13 @@ const columnViewOptions = [
       }
     },
     visible: true,
+    style: {},
   },
   {
     name: "Transport",
     formatFn: null,
     visible: false,
+    style: {},
   },
 ] as ColumnViewOptions[];
 
@@ -309,13 +315,13 @@ function toggleSidebar(event: Event) {
         <div class="container-fluid" ref="scrollComponent">
           <table class="table table-striped table-hover table-borderless table-sm">
             <thead>
-              <th v-for="c in columnViewOptions.filter((x) => x.visible)">
+              <th v-for="c in columnViewOptions.filter((x) => x.visible)" :style="c.style">
                 {{ c.name }}
               </th>
             </thead>
             <tbody class="table-group-divider">
               <tr v-for="row in vm.logs.rows" :class="getRowClass(row)">
-                <td v-for="c in columnViewOptions.filter((x) => x.visible)">
+                <td v-for="c in columnViewOptions.filter((x) => x.visible)" :style="c.style">
                   <div :title="row[c.index]">
                     {{ c.formatFn != null ? c.formatFn(row[c.index]) : row[c.index] }}
                   </div>

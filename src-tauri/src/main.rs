@@ -40,7 +40,7 @@ pub struct JournalQuery {
     priority: u32,
     offset: u64,
     limit: u64,
-    quickSearch: String
+    quickSearch: String,
 }
 
 #[tauri::command]
