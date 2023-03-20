@@ -12,8 +12,10 @@ A modern desktop application to visualize systemd logs.
 - Visualize different alerts levels with different styles.
 - Infinite scrolling.
 
-## Based on
+## Built with
 
 - Rust
-- Vue
 - Systemd Journald
+- Tauri
+- Vue
+- Bootstrap
