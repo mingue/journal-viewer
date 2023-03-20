@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, VueElement, type Events } from "vue";
+import { reactive, onMounted, onUnmounted, ref } from "vue";
 import { invoke } from "@tauri-apps/api";
 
 let vm = reactive({
@@ -9,20 +9,15 @@ let vm = reactive({
   priority: "6",
   quickSearch: "",
 });
+const scrollComponent = ref(null);
 
 type JournalEntries = {
   headers: Array<string>;
   rows: Array<Array<string>>;
 };
 
-let JournalQuery = {
-  fields: [
-    "PRIORITY",
-    "_SOURCE_REALTIME_TIMESTAMP",
-    "_COMM",
-    "MESSAGE",
-    "_TRANSPORT",
-  ],
+let journalQuery = {
+  fields: ["PRIORITY", "_SOURCE_REALTIME_TIMESTAMP", "_COMM", "MESSAGE", "_TRANSPORT"],
   priority: parseInt(vm.priority),
   quickSearch: vm.quickSearch,
   offset: 0,
@@ -93,6 +88,8 @@ columnViewOptions.forEach((c, i) => {
   c.index = i;
 });
 
+let loadingLogs: false;
+
 function getLogs(event?: Event) {
   if (event != null) {
     event.preventDefault();
@@ -100,28 +97,64 @@ function getLogs(event?: Event) {
 
   vm.isSidebarCollapsed = true;
 
-  let query = JournalQuery;
-  query.priority = parseInt(vm.priority);
-  query.quickSearch = vm.quickSearch;
+  journalQuery.offset = 0;
+  journalQuery.priority = parseInt(vm.priority);
+  journalQuery.quickSearch = vm.quickSearch;
+
+  loadingLogs = true;
 
   invoke<JournalEntries>("get_logs", {
-    query: JournalQuery,
-  }).then((response) => {
-    vm.logs = response;
-  });
+    query: journalQuery,
+  })
+    .then((response) => {
+      loadingLogs = false;
+      vm.logs = response;
+    })
+    .catch(() => {
+      loadingLogs = false;
+    });
 }
 
 getLogs();
 
+onMounted(() => {
+  window.addEventListener("scroll", handleScroll);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("scroll", handleScroll);
+});
+
+const handleScroll = () => {
+  if (loadingLogs) {
+    return;
+  }
+
+  if (scrollComponent.value.getBoundingClientRect().bottom < window.innerHeight) {
+    loadNextLogs();
+  }
+};
+
+function loadNextLogs() {
+  journalQuery.offset += journalQuery.limit;
+
+  invoke<JournalEntries>("get_logs", {
+    query: journalQuery,
+  }).then((response) => {
+    vm.logs = {
+      ...response,
+      rows: vm.logs.rows.concat(response.rows),
+    };
+  });
+}
+
 let maxSummaryValue = 0;
 
 invoke<JournalEntries>("get_logs_summary", {
-  query: JournalQuery,
+  query: journalQuery,
 }).then((response) => {
   // Set timestamp to blocks of 15m
-  let logEntries = response.rows.map((r) =>
-    Math.floor(Math.floor(parseInt(r[0]) / 1_000_000) / 900)
-  );
+  let logEntries = response.rows.map((r) => Math.floor(Math.floor(parseInt(r[0]) / 1_000_000) / 900));
 
   // Count entries per block of time
   let itemsPerBlock: EntriesPerBlockOfTime = {};
@@ -210,21 +243,15 @@ function toggleSidebar(event: Event) {
         <div class="flex-fill y-legend">
           {{ Math.round((maxSummaryValue * 100) / 100) }}
         </div>
-        <div class="flex-fill y-legend">
-          &nbsp;
-        </div>
+        <div class="flex-fill y-legend">&nbsp;</div>
         <div class="flex-fill y-legend">
           {{ Math.round((maxSummaryValue * 50) / 100) }}
         </div>
-        <div class="flex-fill y-legend">
-          &nbsp;
-        </div>
+        <div class="flex-fill y-legend">&nbsp;</div>
       </div>
-      <div class="flex-fill summary-cell" v-for="v, k, index in vm.logSummaryEntries"
+      <div class="flex-fill summary-cell" v-for="(v, k, index) in vm.logSummaryEntries"
         :title="`Date: ${getSummaryDate(k)}, Value: ${v}`">
-        <div class="summary-value" :style="{ height: (v / maxSummaryValue) * 100 + '%' }">
-          &nbsp;
-        </div>
+        <div class="summary-value" :style="{ height: (v / maxSummaryValue) * 100 + '%' }">&nbsp;</div>
 
         <div class="summary-x-legend" :class="{ visible: index % 10 == 0, invisible: index % 10 != 0 }">
           {{ getXLegendDate(k, index) }}
@@ -233,10 +260,10 @@ function toggleSidebar(event: Event) {
     </div>
     <!-- Quick Search -->
     <nav class="navbar bg-body-tertiary">
-      <div class="container-fluid" style="border: 1px solid #ddd; padding: 1rem;">
+      <div class="container-fluid" style="border: 1px solid #ddd; padding: 1rem">
         <a class="navbar-brand">Quick Search</a>
         <form class="d-flex" role="search">
-          <input class="form-control me-2" type="search" v-model="vm.quickSearch" aria-label="Search">
+          <input class="form-control me-2" type="search" v-model="vm.quickSearch" aria-label="Search" />
           <button class="btn btn-outline-primary" type="submit" @click="getLogs">Search</button>
         </form>
       </div>
@@ -248,7 +275,7 @@ function toggleSidebar(event: Event) {
         <div class="d-flex flex-column flex-shrink-0" @click="toggleSidebar">
           <ul class="nav nav-pills nav-flush flex-column mb-auto text-center">
             <li class="nav-item">
-              <a href="#" class="nav-link py-3 border-bottom rounded-0" :class="{ 'active': !vm.isSidebarCollapsed }"
+              <a href="#" class="nav-link py-3 border-bottom rounded-0" :class="{ active: !vm.isSidebarCollapsed }"
                 aria-current="page" data-bs-toggle="tooltip" data-bs-placement="right" aria-label="Home"
                 data-bs-original-title="Home">
                 <i class="bi bi-funnel"></i>
@@ -274,35 +301,23 @@ function toggleSidebar(event: Event) {
             </select>
             <div id="priorityHelp" class="form-text">Higher or equal to</div>
           </div>
-          <!-- 
-                                            <div class="mb-3">
-                                              <label for="exampleInputPassword1" class="form-label">Password</label>
-                                              <input type="password" class="form-control" id="exampleInputPassword1">
-                                            </div>
-                                            <div class="mb-3 form-check">
-                                              <input type="checkbox" class="form-check-input" id="exampleCheck1">
-                                              <label class="form-check-label" for="exampleCheck1">Check me out</label>
-                                            </div> 
-                                          -->
           <button type="submit" class="btn btn-outline-primary" @click="getLogs">Filter</button>
         </form>
       </div>
       <div class="flex-fill">
         <!-- Log table -->
-        <div class="container-fluid">
+        <div class="container-fluid" ref="scrollComponent">
           <table class="table table-striped table-hover table-borderless table-sm">
             <thead>
-              <th v-for="c in columnViewOptions.filter(x => x.visible)">
+              <th v-for="c in columnViewOptions.filter((x) => x.visible)">
                 {{ c.name }}
               </th>
             </thead>
             <tbody class="table-group-divider">
-              <tr v-for="row in vm.logs.rows" :class=getRowClass(row)>
-                <td v-for="c in columnViewOptions.filter(x => x.visible)">
+              <tr v-for="row in vm.logs.rows" :class="getRowClass(row)">
+                <td v-for="c in columnViewOptions.filter((x) => x.visible)">
                   <div :title="row[c.index]">
-                    {{
-                      c.formatFn != null ? c.formatFn(row[c.index]) : row[c.index]
-                    }}
+                    {{ c.formatFn != null ? c.formatFn(row[c.index]) : row[c.index] }}
                   </div>
                 </td>
               </tr>
@@ -321,6 +336,10 @@ function toggleSidebar(event: Event) {
   color: white;
 }
 
+.priority-0 td div {
+  color: white;
+}
+
 .priority-0 td:first-child div {
   width: 4px;
   height: 24px;
@@ -329,6 +348,10 @@ function toggleSidebar(event: Event) {
 .priority-1 {
   font-weight: 500;
   background-color: rgb(116, 26, 26);
+  color: white;
+}
+
+.priority-1 td div {
   color: white;
 }
 
