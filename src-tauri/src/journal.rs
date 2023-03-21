@@ -112,7 +112,7 @@ impl Journal {
                     }
                     Err(e) => {
                         row.push(String::new());
-                        warn!("Could not find the field {}", e);
+                        warn!("Could not find the field: {}, JournalError: {}", &field, e);
                     }
                 }
             }

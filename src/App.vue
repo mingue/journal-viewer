@@ -168,7 +168,7 @@ invoke<JournalEntries>("get_logs_summary", {
     itemsPerBlock[x] = (itemsPerBlock[x] || 0) + 1;
   });
 
-  // Fill empty blocks with 0 vakue as there might be no log entries for a block of time
+  // Fill empty blocks with 0 value as there might be no log entries for a block of time
   let keysStr = Object.keys(itemsPerBlock);
   let keys = keysStr.map((x) => parseInt(x));
 
@@ -182,10 +182,16 @@ invoke<JournalEntries>("get_logs_summary", {
   let itemsPerTimestampBlock: EntriesPerBlockOfTime = {};
   for (const k in itemsPerBlock) {
     const blockTimestamp = parseInt(k) * 1000 * 900;
+
+    if (isNaN(blockTimestamp)) {
+      continue;
+    }
+
     let value = itemsPerBlock[k];
     if (value > maxSummaryValue) {
       maxSummaryValue = value;
     }
+
     itemsPerTimestampBlock[blockTimestamp] = itemsPerBlock[k];
   }
 
@@ -259,7 +265,7 @@ function toggleSidebar(event: Event) {
         :title="`Date: ${getSummaryDate(k)}, Value: ${v}`">
         <div class="summary-value" :style="{ height: (v / maxSummaryValue) * 100 + '%' }">&nbsp;</div>
 
-        <div class="summary-x-legend" :class="{ visible: index % 10 == 0, invisible: index % 10 != 0 }">
+        <div class="summary-x-legend" :class="{ 'd-none': index % 10 != 0 }">
           {{ getXLegendDate(k, index) }}
         </div>
       </div>
@@ -422,10 +428,9 @@ function toggleSidebar(event: Event) {
   height: 100px;
   margin: 1rem;
   margin-bottom: 5rem;
-  padding-left: 1rem;
-  padding-right: 2rem;
   background-color: #eee;
   position: relative;
+  width: 98%;
 }
 
 .summary-y-legend {
