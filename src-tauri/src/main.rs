@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 #![cfg_attr(
     all(not(debug_assertions), target_os = "windows"),
     windows_subsystem = "windows"
@@ -9,6 +10,7 @@ mod journal_fields;
 mod libsdjournal;
 mod libsdjournal_bindings;
 mod query_builder;
+mod query;
 
 #[macro_use]
 extern crate log;
@@ -18,7 +20,9 @@ use chrono::{Duration, Utc};
 use env_logger::Env;
 use journal::{Journal, OpenFlags};
 use journal_entries::JournalEntries;
+use libsdjournal::JournalError;
 use serde::Deserialize;
+use tauri::async_runtime::Mutex;
 
 fn main() {
     let env = Env::default()
@@ -27,25 +31,6 @@ fn main() {
 
     env_logger::init_from_env(env);
 
-    info!("Starting journal logger");
-    tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_logs, greet, get_logs_summary])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
-}
-
-#[derive(Debug, Deserialize)]
-pub struct JournalQuery {
-    fields: Vec<String>,
-    priority: u32,
-    offset: u64,
-    limit: u64,
-    quickSearch: String,
-}
-
-#[tauri::command]
-async fn get_logs(query: JournalQuery) -> JournalEntries {
-    debug!("Getting logs...");
     let j = Journal::open(
         OpenFlags::SD_JOURNAL_LOCAL_ONLY
             | OpenFlags::SD_JOURNAL_SYSTEM
@@ -53,21 +38,45 @@ async fn get_logs(query: JournalQuery) -> JournalEntries {
     )
     .unwrap();
 
-    let mut qb = QueryBuilder::default();
-    qb.with_fields(query.fields)
-        .with_offset(query.offset)
-        .with_limit(query.limit)
-        .with_quick_search(query.quickSearch)
-        .with_priority_above_or_equal_to(query.priority);
+    info!("Starting journal logger");
+    tauri::Builder::default()
+        .manage(Mutex::new(j))
+        .invoke_handler(tauri::generate_handler![get_logs, get_summary])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
 
-    let logs = j.query_logs(&qb).unwrap();
-    debug!("Found {} entries.", logs.rows.len());
-
-    logs
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JournalQuery {
+    fields: Vec<String>,
+    priority: u32,
+    limit: u64,
+    quick_search: String,
+    reset_position: bool
 }
 
 #[tauri::command]
-async fn get_logs_summary(query: JournalQuery) -> JournalEntries {
+async fn get_logs(query: JournalQuery, journal: tauri::State<'_, Mutex<Journal>>) -> Result<JournalEntries, JournalError> {
+    debug!("Getting logs...");
+
+    let mut qb = QueryBuilder::default();
+    let q = qb.with_fields(query.fields)
+        .with_limit(query.limit)
+        .with_quick_search(query.quick_search)
+        .reset_position(query.reset_position)
+        .with_priority_above_or_equal_to(query.priority)
+        .build();
+
+    let lock = journal.lock().await;
+    let logs = lock.query_logs(&q)?;
+    debug!("Found {} entries.", logs.rows.len());
+
+    Ok(logs)
+}
+
+#[tauri::command]
+async fn get_summary(query: JournalQuery) -> Result<JournalEntries, JournalError> {
     debug!("Getting summary...");
     let j = Journal::open(
         OpenFlags::SD_JOURNAL_LOCAL_ONLY
@@ -78,19 +87,14 @@ async fn get_logs_summary(query: JournalQuery) -> JournalEntries {
 
     let from = Utc::now() - Duration::days(1);
     let mut qb = QueryBuilder::default();
-    qb.with_fields(vec![journal_fields::SOURCE_REALTIME_TIMESTAMP.into()])
-        .with_offset(query.offset)
+    let q = qb.with_fields(vec![journal_fields::SOURCE_REALTIME_TIMESTAMP.into()])
         .with_limit(10_000)
         .with_date_from(from.timestamp_micros() as u64)
-        .with_priority_above_or_equal_to(query.priority);
+        .with_priority_above_or_equal_to(query.priority)
+        .build();
 
-    let logs = j.query_logs(&qb).unwrap();
+    let logs = j.query_logs(&q)?;
     debug!("Found {} entries.", logs.rows.len());
 
-    logs
-}
-
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}!", name)
+    Ok(logs)
 }

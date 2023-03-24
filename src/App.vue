@@ -20,8 +20,8 @@ let journalQuery = {
   fields: ["PRIORITY", "_SOURCE_REALTIME_TIMESTAMP", "_COMM", "MESSAGE", "_TRANSPORT"],
   priority: parseInt(vm.priority),
   quickSearch: vm.quickSearch,
-  offset: 0,
-  limit: 100,
+  limit: 50,
+  resetPosition: true,
 };
 
 type ColumnViewOptions = {
@@ -94,7 +94,7 @@ columnViewOptions.forEach((c, i) => {
   c.index = i;
 });
 
-let loadingLogs: false;
+let loadingLogs = false;
 
 function getLogs(event?: Event) {
   if (event != null) {
@@ -103,9 +103,9 @@ function getLogs(event?: Event) {
 
   vm.isSidebarCollapsed = true;
 
-  journalQuery.offset = 0;
   journalQuery.priority = parseInt(vm.priority);
   journalQuery.quickSearch = vm.quickSearch;
+  journalQuery.resetPosition = true;
 
   loadingLogs = true;
 
@@ -121,10 +121,9 @@ function getLogs(event?: Event) {
     });
 }
 
-getLogs();
-
 onMounted(() => {
   window.addEventListener("scroll", handleScroll);
+  getLogs();
 });
 
 onUnmounted(() => {
@@ -142,21 +141,28 @@ const handleScroll = () => {
 };
 
 function loadNextLogs() {
-  journalQuery.offset += journalQuery.limit;
+  loadingLogs = true;
+
+  journalQuery.resetPosition = false;
 
   invoke<JournalEntries>("get_logs", {
     query: journalQuery,
-  }).then((response) => {
-    vm.logs = {
-      ...response,
-      rows: vm.logs.rows.concat(response.rows),
-    };
-  });
+  })
+    .then((response) => {
+      vm.logs = {
+        ...response,
+        rows: vm.logs.rows.concat(response.rows),
+      };
+      loadingLogs = false;
+    })
+    .catch(() => {
+      loadingLogs = false;
+    });
 }
 
 let maxSummaryValue = 0;
 
-invoke<JournalEntries>("get_logs_summary", {
+invoke<JournalEntries>("get_summary", {
   query: journalQuery,
 }).then((response) => {
   // Set timestamp to blocks of 15m
@@ -271,11 +277,12 @@ function toggleSidebar(event: Event) {
       </div>
     </div>
     <!-- Quick Search -->
-    <nav class="navbar bg-body-tertiary">
-      <div class="container-fluid" style="border: 1px solid #ddd; padding: 1rem">
-        <a class="navbar-brand">Quick Search</a>
+    <nav class="navbar">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Navbar</a>
         <form class="d-flex" role="search">
-          <input class="form-control me-2" type="search" v-model="vm.quickSearch" aria-label="Search" />
+          <input class="form-control me-2" type="search" placeholder="Quick Search" v-model="vm.quickSearch"
+            aria-label="Search" />
           <button class="btn btn-outline-primary" type="submit" @click="getLogs">Search</button>
         </form>
       </div>
@@ -344,7 +351,7 @@ function toggleSidebar(event: Event) {
 <style scoped>
 .priority-0 {
   font-weight: 500;
-  background-color: black;
+  background-color: rgb(39, 39, 39);
   color: white;
 }
 
@@ -359,7 +366,7 @@ function toggleSidebar(event: Event) {
 
 .priority-1 {
   font-weight: 500;
-  background-color: rgb(116, 26, 26);
+  background-color: rgb(131, 60, 60);
   color: white;
 }
 
@@ -427,7 +434,7 @@ function toggleSidebar(event: Event) {
 .summary-bar {
   height: 100px;
   margin: 1rem;
-  margin-bottom: 5rem;
+  margin-bottom: 4rem;
   background-color: #eee;
   position: relative;
   width: 98%;
@@ -480,8 +487,13 @@ function toggleSidebar(event: Event) {
   width: 100px;
 }
 
+.navbar {
+  background-color: #e3f2fd;
+  border: 1px solid #70b1df;
+}
+
 .filter-content {
-  width: 20rem;
+  width: 600px;
   padding: 1rem;
 }
 </style>

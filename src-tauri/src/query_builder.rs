@@ -1,22 +1,14 @@
-use crate::journal_fields;
+use std::mem;
+
+use crate::{journal_fields, query::Query};
 
 pub struct QueryBuilder {
-    pub(crate) pid: u32,
-    pub(crate) fields: Vec<String>,
-    pub(crate) minimum_priority: u32,
-    pub(crate) unit: String,
-    pub(crate) slice: String,
-    pub(crate) boot_id: String,
-    pub(crate) limit: u64,
-    pub(crate) fromEpoch: u64,
-    pub(crate) skip: u64,
-    pub(crate) transports: Vec<String>,
-    pub(crate) quickSearch: String,
+    query: Query,
 }
 
 impl QueryBuilder {
     pub fn default() -> Self {
-        let mut qb = QueryBuilder {
+        let query = Query {
             pid: 0,
             fields: vec![],
             minimum_priority: 4,
@@ -24,16 +16,18 @@ impl QueryBuilder {
             slice: String::new(),
             boot_id: String::new(),
             limit: 100,
-            skip: 0,
             transports: vec![
                 "driver".into(),
                 "syslog".into(),
                 "journal".into(),
                 "stdout".into(),
             ],
-            fromEpoch: 0,
-            quickSearch: "".into()
+            from_epoch: 0,
+            quick_search: "".into(),
+            reset_position: true,
         };
+
+        let mut qb = QueryBuilder { query };
 
         qb.with_default_fields();
 
@@ -41,9 +35,9 @@ impl QueryBuilder {
     }
 
     pub fn with_default_fields(&mut self) -> &mut Self {
-        self.fields.clear();
+        self.query.fields.clear();
 
-        self.fields.extend([
+        self.query.fields.extend([
             journal_fields::MESSAGE.to_owned(),
             journal_fields::PRIORITY.to_owned(),
             journal_fields::ERRNO.to_owned(),
@@ -62,48 +56,48 @@ impl QueryBuilder {
     }
 
     pub fn with_fields(&mut self, fields: Vec<String>) -> &mut Self {
-        self.fields.clear();
+        self.query.fields.clear();
 
-        self.fields.extend(fields);
+        self.query.fields.extend(fields);
 
         self
     }
 
     pub fn with_transports(&mut self, transports: Vec<String>) -> &mut Self {
-        self.transports = transports;
+        self.query.transports = transports;
         self
     }
 
     pub fn with_pid(&mut self, pid: u32) -> &mut Self {
-        self.pid = pid;
-        self
-    }
-
-    pub fn with_offset(&mut self, offset: u64) -> &mut Self {
-        self.skip = offset;
+        self.query.pid = pid;
         self
     }
 
     pub fn with_limit(&mut self, limit: u64) -> &mut Self {
-        self.limit = limit;
+        self.query.limit = limit;
         self
     }
 
-    pub fn with_quick_search(&mut self, quickSearch: String) -> &mut Self {
-        self.quickSearch = quickSearch.to_lowercase();
+    pub fn with_quick_search(&mut self, quick_search: String) -> &mut Self {
+        self.query.quick_search = quick_search.to_lowercase();
         self
     }
 
-    pub fn with_date_from(&mut self, fromEpoch: u64) -> &mut Self {
-        self.fromEpoch = fromEpoch;
+    pub fn reset_position(&mut self, reset_position: bool) -> &mut Self {
+        self.query.reset_position = reset_position;
+        self
+    }
+
+    pub fn with_date_from(&mut self, from_epoch: u64) -> &mut Self {
+        self.query.from_epoch = from_epoch;
         self
     }
 
     pub fn with_priority_above_or_equal_to(&mut self, minimum_priority: u32) -> &mut Self {
         if minimum_priority > 7 {
-            self.minimum_priority = 7;
+            self.query.minimum_priority = 7;
         } else {
-            self.minimum_priority = minimum_priority;
+            self.query.minimum_priority = minimum_priority;
         }
 
         self
@@ -111,21 +105,28 @@ impl QueryBuilder {
 
     pub fn with_unit(&mut self, unit: &str) -> &mut Self {
         let mut full_unit: String = String::from(unit);
-        if !full_unit.contains(".") {
+        if !full_unit.contains('.') {
             full_unit.push_str(".service");
         }
 
-        self.unit = full_unit;
+        self.query.unit = full_unit;
         self
     }
 
     pub fn within_slice(&mut self, slice: &str) -> &mut Self {
-        self.slice = String::from(slice);
+        self.query.slice = String::from(slice);
         self
     }
 
     pub fn with_boot_id(&mut self, boot_id: &str) -> &mut Self {
-        self.boot_id = String::from(boot_id);
+        self.query.boot_id = String::from(boot_id);
         self
+    }
+
+    pub fn build(&mut self) -> Query {
+        let qb = QueryBuilder::default();
+        let old_qb = mem::replace(self, qb);
+
+        old_qb.query
     }
 }

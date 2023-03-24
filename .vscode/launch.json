@@ -8,7 +8,10 @@
             "command": "npm run tauri dev",
             "name": "tauri dev",
             "request": "launch",
-            "type": "node-terminal"
+            "type": "node-terminal",
+            "env": {
+                "RUST_BACKTRACE": "1",
+            }
         },
         {
             "type": "lldb",

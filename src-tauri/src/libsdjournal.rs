@@ -1,11 +1,13 @@
+use crate::libsdjournal_bindings;
 use libc::{c_char, c_void, size_t};
+use serde::Serialize;
 use std::{
     ffi::{CStr, CString},
     fmt::Display,
 };
-use crate::libsdjournal_bindings;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct JournalError(i32);
 
 impl Display for JournalError {
@@ -14,7 +16,7 @@ impl Display for JournalError {
     }
 }
 
-pub fn sd_journal_open(sd_journal: &mut *const c_void, flags: u32) -> Result<(), JournalError> {
+pub fn sd_journal_open(sd_journal: &mut *mut c_void, flags: u32) -> Result<(), JournalError> {
     let ret: libc::c_int;
 
     unsafe {
@@ -27,13 +29,13 @@ pub fn sd_journal_open(sd_journal: &mut *const c_void, flags: u32) -> Result<(),
     Ok(())
 }
 
-pub fn sd_journal_close(sd_journal: *const c_void) {
+pub fn sd_journal_close(sd_journal: *mut c_void) {
     unsafe {
         libsdjournal_bindings::sd_journal_close(sd_journal);
     }
 }
 
-pub fn sd_journal_next(sd_journal: *const c_void) -> Result<bool, JournalError> {
+pub fn sd_journal_next(sd_journal: *mut c_void) -> Result<bool, JournalError> {
     let ret: libc::c_int;
 
     unsafe {
@@ -47,7 +49,7 @@ pub fn sd_journal_next(sd_journal: *const c_void) -> Result<bool, JournalError> 
     Ok(ret > 0)
 }
 
-pub fn sd_journal_previous(sd_journal: *const c_void) -> Result<bool, JournalError> {
+pub fn sd_journal_previous(sd_journal: *mut c_void) -> Result<bool, JournalError> {
     let ret: libc::c_int;
 
     unsafe {
@@ -61,7 +63,7 @@ pub fn sd_journal_previous(sd_journal: *const c_void) -> Result<bool, JournalErr
     Ok(ret > 0)
 }
 
-pub fn sd_journal_next_skip(sd_journal: *const c_void, skip: u64) -> Result<bool, JournalError> {
+pub fn sd_journal_next_skip(sd_journal: *mut c_void, skip: u64) -> Result<bool, JournalError> {
     let ret: libc::c_int;
 
     unsafe {
@@ -75,10 +77,7 @@ pub fn sd_journal_next_skip(sd_journal: *const c_void, skip: u64) -> Result<bool
     Ok(ret > 0)
 }
 
-pub fn sd_journal_previous_skip(
-    sd_journal: *const c_void,
-    skip: u64,
-) -> Result<bool, JournalError> {
+pub fn sd_journal_previous_skip(sd_journal: *mut c_void, skip: u64) -> Result<bool, JournalError> {
     let ret: libc::c_int;
 
     unsafe {
@@ -92,13 +91,18 @@ pub fn sd_journal_previous_skip(
     Ok(ret > 0)
 }
 
-pub fn sd_journal_get_data(sd_journal: *const c_void, field: &str) -> Result<String, JournalError> {
-    let mut data: *const c_void = std::ptr::null_mut();
+pub fn sd_journal_get_data(sd_journal: *mut c_void, field: &str) -> Result<String, JournalError> {
+    let mut data: *mut c_void = std::ptr::null_mut();
     let mut length: size_t = 0;
     let c_field = CString::new(field).expect("CString failed");
     let ret: libc::c_int;
     unsafe {
-        ret = libsdjournal_bindings::sd_journal_get_data(sd_journal, c_field.as_ptr(), &mut data, &mut length);
+        ret = libsdjournal_bindings::sd_journal_get_data(
+            sd_journal,
+            c_field.as_ptr(),
+            &mut data,
+            &mut length,
+        );
     }
 
     if ret < 0 {
@@ -126,7 +130,7 @@ pub fn sd_journal_get_data(sd_journal: *const c_void, field: &str) -> Result<Str
     Ok(result.unwrap())
 }
 
-pub fn sd_journal_add_match(sd_journal: *const c_void, data: String) -> Result<(), JournalError> {
+pub fn sd_journal_add_match(sd_journal: *mut c_void, data: String) -> Result<(), JournalError> {
     let ret: libc::c_int;
 
     unsafe {
@@ -141,7 +145,7 @@ pub fn sd_journal_add_match(sd_journal: *const c_void, data: String) -> Result<(
     Ok(())
 }
 
-pub fn sd_journal_seek_head(sd_journal: *const c_void) -> Result<(), JournalError> {
+pub fn sd_journal_seek_head(sd_journal: *mut c_void) -> Result<(), JournalError> {
     let ret: libc::c_int;
 
     unsafe {
@@ -154,7 +158,7 @@ pub fn sd_journal_seek_head(sd_journal: *const c_void) -> Result<(), JournalErro
     Ok(())
 }
 
-pub fn sd_journal_seek_tail(sd_journal: *const c_void) -> Result<(), JournalError> {
+pub fn sd_journal_seek_tail(sd_journal: *mut c_void) -> Result<(), JournalError> {
     let ret: libc::c_int;
 
     unsafe {
@@ -167,7 +171,7 @@ pub fn sd_journal_seek_tail(sd_journal: *const c_void) -> Result<(), JournalErro
     Ok(())
 }
 
-pub fn sd_journal_add_conjunction(sd_journal: *const c_void) -> Result<bool, JournalError> {
+pub fn sd_journal_add_conjunction(sd_journal: *mut c_void) -> Result<bool, JournalError> {
     let ret: libc::c_int;
 
     unsafe {
@@ -181,7 +185,7 @@ pub fn sd_journal_add_conjunction(sd_journal: *const c_void) -> Result<bool, Jou
     Ok(ret > 0)
 }
 
-pub fn sd_journal_add_disjunction(sd_journal: *const c_void) -> Result<bool, JournalError> {
+pub fn sd_journal_add_disjunction(sd_journal: *mut c_void) -> Result<bool, JournalError> {
     let ret: libc::c_int;
 
     unsafe {
@@ -193,4 +197,10 @@ pub fn sd_journal_add_disjunction(sd_journal: *const c_void) -> Result<bool, Jou
     }
 
     Ok(ret > 0)
+}
+
+pub fn sd_journal_flush_matches(sd_journal: *mut c_void) {
+    unsafe {
+        libsdjournal_bindings::sd_journal_flush_matches(sd_journal);
+    }
 }
