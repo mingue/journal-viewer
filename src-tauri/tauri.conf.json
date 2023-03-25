@@ -19,7 +19,9 @@
       "category": "DeveloperTool",
       "copyright": "",
       "deb": {
-        "depends": []
+        "depends": [
+          "systemd"
+        ]
       },
       "externalBin": [],
       "icon": [
@@ -29,7 +31,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.tauri.dev",
+      "identifier": "com.vmingueza.journal-viewer",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
