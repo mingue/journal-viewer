@@ -22,7 +22,7 @@ function search(event?: Event) {
   <!-- Quick Search -->
   <nav class="navbar">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">Navbar</a>
+      <a class="navbar-brand" href="#">Quick Search</a>
       <form class="d-flex" role="search">
         <input
           class="form-control me-2"
