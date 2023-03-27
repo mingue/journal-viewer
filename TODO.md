@@ -20,14 +20,20 @@
 
 ## Dark theme
 
-- Add dark theme
-- Add auto-detection to select dark theme
+- [ ] Add dark theme
+- [ ] Add auto-detection to select dark theme
 
 ## Break down components
 
+- [x] Break down vue components
+
 ## Refactor to use anyhow
 
+- [ ] Use anyhow crate for app errors
+
 ## Publish to AUR
+
+- [x] Published in <https://aur.archlinux.org/packages/journal-viewer-bin>
 
 ## Invesitgate possibility of flatpak
 
