@@ -8,6 +8,7 @@
 
 - [x] Allow async queries
 - [x] Reuse the journal pointer between queries
+
 ## Journal filter
 
 - [x] Priority
@@ -34,6 +35,11 @@
 ## Publish to AUR
 
 - [x] Published in <https://aur.archlinux.org/packages/journal-viewer-bin>
+
+## Automate reelase process
+
+- [x] Document build & publish process
+- [ ] Automate process
 
 ## Invesitgate possibility of flatpak
 
