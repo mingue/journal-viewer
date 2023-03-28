@@ -1,1 +1,6 @@
-tree -d -L 2
+#! /bin/bash
+
+set -e
+
+npm install
+npm run tauri build
