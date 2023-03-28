@@ -1,0 +1,10 @@
+name: release
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: build
+        run: ./.github/scripts/build.sh
+        shell: bash
