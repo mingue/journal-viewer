@@ -2,5 +2,6 @@
 
 set -e
 
-npm install
-npm run tauri build
+ld -lsystemd --verbose
+# npm install
+# npm run tauri build
