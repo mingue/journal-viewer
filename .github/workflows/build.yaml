@@ -1,9 +1,6 @@
-name: release
+name: build
 
-on:
-  push:
-    tags:
-      - "v*.*.*"
+on: [push]
 
 env:
   JOURNAL_VERSION: "0.1.1"
@@ -23,18 +20,5 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.0-dev build-essential curl wget libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev systemd
       - name: build
-        run: ./.github/scripts/build-release.sh
+        run: ./.github/scripts/build-dev.sh
         shell: bash
-      - name: build-artifacts
-        run: ./.github/scripts/build-artifacts.sh
-        shell: bash
-      - name: create-draft-release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            ./out/*.*
-          draft: true
-          prerelease: true
-          generate_release_notes: true
-
-      #TODO: Use tag as version for tauri packages
