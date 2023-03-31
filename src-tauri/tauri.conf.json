@@ -21,7 +21,7 @@
       "deb": {
         "depends": [
           "systemd",
-          "webkit2gtk"
+          "libwebkit2gtk-4.0-37"
         ]
       },
       "externalBin": [],
