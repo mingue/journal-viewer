@@ -1,5 +1,10 @@
 name: release
-on: [push]
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
 env:
   JOURNAL_VERSION: "0.1.1"
 jobs:
@@ -21,3 +26,11 @@ jobs:
       - name: build-artifacts
         run: ./.github/scripts/build-artifacts.sh
         shell: bash
+      - name: create-draft-release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./out/*.*
+          draft: true
+          prerelease: true
+          generate_release_notes: true
