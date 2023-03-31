@@ -2,7 +2,7 @@
 
 set -e
 
-pkgver=${$GITHUB_REF_NAME:1}
+pkgver=${GITHUB_REF_NAME:1}
 echo "Publishing version: $pkgver"
 
 mkdir -p out
