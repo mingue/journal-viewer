@@ -5,7 +5,7 @@ pkgrel=1
 pkgdesc="A modern linux desktop application to visualize systemd logs."
 arch=('x86_64')
 url="https://github.com/mingue/journal-viewer"
-license=('GNU General Public License v3.0')
+license=('GPL3')
 depends=(
   'systemd'
   'webkit2gtk'
@@ -15,10 +15,14 @@ optdepends=(
 provides=('journal-viewer')
 conflicts=('journal-viewer')
 
-source_x86_64=("$url/releases/download/v${pkgver}/${pkgname/-bin/}_${pkgver}_x86_64.tar.gz"
-        "${pkgname/-bin/}.desktop")
-sha256sums_x86_64=('{{sha256sumBin}}'
-            '{{sha256sumDesktop}}')
+source_x86_64=(
+  "$url/releases/download/v${pkgver}/${pkgname/-bin/}_${pkgver}_x86_64.tar.gz"
+  "${pkgname/-bin/}.desktop"
+)
+sha256sums_x86_64=(
+  '{{sha256sumBin}}'
+  '{{sha256sumDesktop}}'
+)
 
 package() {
   _output="${srcdir}"
