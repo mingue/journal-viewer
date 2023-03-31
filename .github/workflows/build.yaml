@@ -2,8 +2,6 @@ name: build
 
 on: [push]
 
-env:
-  JOURNAL_VERSION: "0.1.1"
 jobs:
   build:
     runs-on: ubuntu-22.04

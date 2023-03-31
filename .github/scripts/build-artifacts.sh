@@ -2,7 +2,8 @@
 
 set -e
 
-pkgver=$JOURNAL_VERSION
+pkgver=${$GITHUB_REF_NAME:1}
+echo "Publishing version: $pkgver"
 
 mkdir -p out
 rm -rf ./out/*
