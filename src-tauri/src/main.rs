@@ -27,7 +27,7 @@ use tauri::async_runtime::Mutex;
 fn main() {
     let env = Env::default()
         .filter_or("RUST_LOG", "warn")
-        .write_style_or("RUST_LOG_STYLE", "auto");
+        .write_style_or("RUST_LOG_STYLE", "never");
 
     env_logger::init_from_env(env);
 
