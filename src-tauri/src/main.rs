@@ -9,8 +9,8 @@ mod journal_entries;
 mod journal_fields;
 mod libsdjournal;
 mod libsdjournal_bindings;
-mod query_builder;
 mod query;
+mod query_builder;
 
 #[macro_use]
 extern crate log;
@@ -26,8 +26,8 @@ use tauri::async_runtime::Mutex;
 
 fn main() {
     let env = Env::default()
-        .filter_or("RUST_LOG", "trace")
-        .write_style_or("RUST_LOG_STYLE", "always");
+        .filter_or("RUST_LOG", "warn")
+        .write_style_or("RUST_LOG_STYLE", "auto");
 
     env_logger::init_from_env(env);
 
@@ -53,15 +53,19 @@ pub struct JournalQuery {
     priority: u32,
     limit: u64,
     quick_search: String,
-    reset_position: bool
+    reset_position: bool,
 }
 
 #[tauri::command]
-async fn get_logs(query: JournalQuery, journal: tauri::State<'_, Mutex<Journal>>) -> Result<JournalEntries, JournalError> {
+async fn get_logs(
+    query: JournalQuery,
+    journal: tauri::State<'_, Mutex<Journal>>,
+) -> Result<JournalEntries, JournalError> {
     debug!("Getting logs...");
 
     let mut qb = QueryBuilder::default();
-    let q = qb.with_fields(query.fields)
+    let q = qb
+        .with_fields(query.fields)
         .with_limit(query.limit)
         .with_quick_search(query.quick_search)
         .reset_position(query.reset_position)
@@ -87,7 +91,8 @@ async fn get_summary(query: JournalQuery) -> Result<JournalEntries, JournalError
 
     let from = Utc::now() - Duration::days(1);
     let mut qb = QueryBuilder::default();
-    let q = qb.with_fields(vec![journal_fields::SOURCE_REALTIME_TIMESTAMP.into()])
+    let q = qb
+        .with_fields(vec![journal_fields::SOURCE_REALTIME_TIMESTAMP.into()])
         .with_limit(10_000)
         .with_date_from(from.timestamp_micros() as u64)
         .with_priority_above_or_equal_to(query.priority)

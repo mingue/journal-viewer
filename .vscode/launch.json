@@ -25,7 +25,12 @@
                 ]
             },
             // task for the `beforeDevCommand` if used, must be configured in `.vscode/tasks.json`
-            "preLaunchTask": "ui:dev"
+            "preLaunchTask": "ui:dev",
+            "env": {
+                "RUST_BACKTRACE": "1",
+                "RUST_LOG": "debug",
+                "RUST_LOG_STYLE": "always"
+            }
         },
         {
             "type": "lldb",
