@@ -1,5 +1,6 @@
 use libc::{c_char, c_int, c_ulong, c_void, size_t};
 
+#[link(name = "libsystemd.so.0", kind = "dylib", modifiers = "+verbatim")]
 extern "C" {
     // int sd_journal_open(sd_journal **ret, int flags);
     pub fn sd_journal_open(sd_journal: &mut *mut c_void, flags: u32) -> c_int;
