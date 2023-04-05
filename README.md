@@ -2,7 +2,11 @@
 
 A modern linux desktop application to visualize systemd logs.
 
-![Journal Viewer Screenshot](docs/screenshot.png)
+## Dark Theme
+![Journal Viewer Dark Theme](docs/screenshot-dark.png)
+
+## Light Theme
+![Journal Viewer Light Theme](docs/screenshot.png)
 
 ## Features
 
