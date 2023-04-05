@@ -42,4 +42,16 @@ function search(event?: Event) {
   background-color: #e3f2fd;
   border: 1px solid #70b1df;
 }
+
+main.dark .navbar {
+  background-color: #1d4663;
+  border: 1px solid #3078ac;
+}
+
+main.dark .navbar-brand {
+  color: #ddd;
+}
+main.dark .btn {
+  color: #ddd;
+}
 </style>

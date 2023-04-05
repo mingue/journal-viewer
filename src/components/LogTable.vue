@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, reactive, ref } from "vue";
 import type { JournalEntries } from "@/model/JournalEntries";
 
 const props = defineProps<{
@@ -9,6 +9,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "load-more"): void;
 }>();
+
+let vm = reactive({
+  tableTheme: "",
+});
 
 const scrollComponent = ref<Element | null>(null);
 
@@ -81,6 +85,12 @@ columnViewOptions.forEach((c, i) => {
 });
 
 onMounted(() => {
+  const match = window.matchMedia("(prefers-color-scheme: dark)");
+
+  if (match) {
+    vm.tableTheme = "table-dark";
+  }
+
   window.addEventListener("scroll", handleScroll);
 });
 
@@ -100,7 +110,7 @@ const getRowClass = (row: Array<string>) => `priority-${row[0]}`;
 <template>
   <!-- Log table -->
   <div class="container-fluid" ref="scrollComponent">
-    <table class="table table-striped table-hover table-borderless table-sm">
+    <table class="table table-striped table-hover table-borderless table-sm" :class="vm.tableTheme">
       <thead>
         <th v-for="c in columnViewOptions.filter((x) => x.visible)" :style="c.style">
           {{ c.name }}
@@ -191,6 +201,13 @@ const getRowClass = (row: Array<string>) => `priority-${row[0]}`;
   color: #666;
 }
 
+main.dark .priority-6 {
+  color: #bbb;
+}
+main.dark .table-striped > tbody > tr.priority-6:nth-of-type(odd) > * {
+  color: #bbb;
+}
+
 .priority-6 td:first-child div {
   width: 4px;
   height: 24px;
@@ -198,6 +215,13 @@ const getRowClass = (row: Array<string>) => `priority-${row[0]}`;
 
 .priority-7 {
   color: #aaa;
+}
+
+main.dark .priority-7 {
+  color: #666;
+}
+main.dark .table-striped > tbody > tr.priority-7:nth-of-type(odd) > * {
+  color: #666;
 }
 
 .priority-7 td:first-child div {

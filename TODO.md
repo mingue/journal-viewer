@@ -13,6 +13,7 @@
 
 - [x] Priority
 - [x] Message text
+- [ ] Unit
 - [ ] Time range
 
 ## Quick filter bar
@@ -21,8 +22,8 @@
 
 ## Dark theme
 
-- [ ] Add dark theme
-- [ ] Add auto-detection to select dark theme
+- [x] Add dark theme
+- [x] Add auto-detection to select dark theme
 
 ## Break down components
 
@@ -36,12 +37,12 @@
 
 - [x] Published in <https://aur.archlinux.org/packages/journal-viewer-bin>
 
-## Automate reelase process
+## Automate relase process
 
 - [x] Document build & publish process
 - [ ] Automate process
 
-## Invesitgate possibility of flatpak
+## Investigate possibility of flatpak
 
 ## Bugs
 
