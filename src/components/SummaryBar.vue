@@ -145,6 +145,10 @@ const getXLegendDate = (x: string, index: number) => {
   width: 98%;
 }
 
+main.dark .summary-bar {
+  background-color: #444;
+}
+
 .summary-y-legend {
   position: absolute;
   left: 0;
@@ -152,9 +156,13 @@ const getXLegendDate = (x: string, index: number) => {
   width: 100%;
 }
 
+main.dark .summary-y-legend {
+  color: #ddd;
+}
+
 .summary-y-legend .y-legend {
   border-bottom: 1px solid #aaa;
-  font-size: 0.4rem;
+  font-size: 0.8rem;
 }
 
 .summary-cell {
@@ -165,6 +173,10 @@ const getXLegendDate = (x: string, index: number) => {
 .summary-cell:hover {
   background-color: #ddd;
   opacity: 0.6;
+}
+
+main.dark .summary-cell:hover {
+  background-color: #666;
 }
 
 .summary-value {
@@ -178,6 +190,11 @@ const getXLegendDate = (x: string, index: number) => {
   margin: 0 auto;
 }
 
+main.dark .summary-value {
+  background-color: rgb(192, 78, 78);
+  border: 1px solid rgb(224, 14, 14);
+}
+
 .summary-cell:hover .summary-value {
   background-color: rgb(255, 0, 0);
   opacity: 1;
@@ -187,8 +204,12 @@ const getXLegendDate = (x: string, index: number) => {
   position: absolute;
   bottom: -50px;
   rotate: 30deg;
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   text-align: left;
   width: 100px;
+}
+
+main.dark .summary-x-legend {
+  color: #ddd;
 }
 </style>

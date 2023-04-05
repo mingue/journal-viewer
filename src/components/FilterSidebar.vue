@@ -80,4 +80,17 @@ function filter(event: Event) {
   width: 600px;
   padding: 1rem;
 }
+
+main.dark .filter-content {
+  color: #ddd;
+}
+
+main.dark .filter-content .form-select {
+  background-color: #444;
+  color: #ddd;
+}
+
+main.dark .filter-content .btn {
+  color: #ddd;
+}
 </style>

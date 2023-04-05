@@ -13,6 +13,7 @@ let vm = reactive({
   isSidebarCollapsed: true,
   priority: "6",
   quickSearch: "",
+  theme: "",
 });
 
 let journalQuery = {
@@ -85,13 +86,20 @@ function filter(filter: Filter) {
 }
 
 onMounted(() => {
+  const match = window.matchMedia("(prefers-color-scheme: dark)");
+
+  if (match) {
+    vm.theme = "dark";
+    document.getElementsByTagName("html")[0].style = "background-color: #222;";
+  }
+
   getLogs();
 });
 </script>
 
 <template>
   <header></header>
-  <main>
+  <main :class="vm.theme">
     <SummaryBar />
     <SearchBar @quick-search="quickSearch" />
     <!-- Main Content -->
@@ -103,3 +111,9 @@ onMounted(() => {
     </div>
   </main>
 </template>
+
+<style scoped>
+main.dark {
+  background-color: #222;
+}
+</style>
