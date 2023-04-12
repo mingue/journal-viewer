@@ -1,4 +1,3 @@
-#!/usr/bin/env xdg-open
 [Desktop Entry]
 Name=Journal Viewer
 Comment=Visualize systemd logs
@@ -7,3 +6,4 @@ Terminal=false
 Icon=logviewer
 StartupNotify=false
 Type=Application
+Categories=Settings;

@@ -13,8 +13,9 @@
 
 - [x] Priority
 - [x] Message text
-- [ ] Unit
+- [x] Unit
 - [ ] Time range
+- [ ] Transports
 
 ## Quick filter bar
 
@@ -40,7 +41,7 @@
 ## Automate relase process
 
 - [x] Document build & publish process
-- [ ] Automate process
+- [ ] Automate process, partially done, missing aur upload
 
 ## Investigate possibility of flatpak
 

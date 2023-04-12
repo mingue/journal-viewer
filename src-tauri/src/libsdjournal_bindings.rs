@@ -49,4 +49,7 @@ extern "C" {
 
     //void sd_journal_flush_matches(sd_journal *j);
     pub fn sd_journal_flush_matches(sd_journal: *mut c_void);
+
+    //int sd_journal_get_realtime_usec(sd_journal *j, uint64_t *usec);
+    pub fn sd_journal_get_realtime_usec(sd_journal: *mut c_void, microseconds: *mut u64) -> c_int;
 }

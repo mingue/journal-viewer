@@ -11,6 +11,7 @@ mod libsdjournal;
 mod libsdjournal_bindings;
 mod query;
 mod query_builder;
+mod unit;
 
 #[macro_use]
 extern crate log;
@@ -23,6 +24,7 @@ use journal_entries::JournalEntries;
 use libsdjournal::JournalError;
 use serde::Deserialize;
 use tauri::async_runtime::Mutex;
+use unit::Unit;
 
 fn main() {
     let env = Env::default()
@@ -41,7 +43,11 @@ fn main() {
     info!("Starting journal logger");
     tauri::Builder::default()
         .manage(Mutex::new(j))
-        .invoke_handler(tauri::generate_handler![get_logs, get_summary])
+        .invoke_handler(tauri::generate_handler![
+            get_logs,
+            get_summary,
+            get_services
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -54,6 +60,7 @@ pub struct JournalQuery {
     limit: u64,
     quick_search: String,
     reset_position: bool,
+    service: String,
 }
 
 #[tauri::command]
@@ -70,6 +77,7 @@ async fn get_logs(
         .with_quick_search(query.quick_search)
         .reset_position(query.reset_position)
         .with_priority_above_or_equal_to(query.priority)
+        .with_unit(query.service)
         .build();
 
     let lock = journal.lock().await;
@@ -79,8 +87,14 @@ async fn get_logs(
     Ok(logs)
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SummaryQuery {
+    priority: u32,
+}
+
 #[tauri::command]
-async fn get_summary(query: JournalQuery) -> Result<JournalEntries, JournalError> {
+async fn get_summary(query: SummaryQuery) -> Result<JournalEntries, JournalError> {
     debug!("Getting summary...");
     let j = Journal::open(
         OpenFlags::SD_JOURNAL_LOCAL_ONLY
@@ -92,7 +106,7 @@ async fn get_summary(query: JournalQuery) -> Result<JournalEntries, JournalError
     let from = Utc::now() - Duration::days(1);
     let mut qb = QueryBuilder::default();
     let q = qb
-        .with_fields(vec![journal_fields::SOURCE_REALTIME_TIMESTAMP.into()])
+        .with_fields(vec!["__REALTIME".into()])
         .with_limit(10_000)
         .with_date_from(from.timestamp_micros() as u64)
         .with_priority_above_or_equal_to(query.priority)
@@ -102,4 +116,13 @@ async fn get_summary(query: JournalQuery) -> Result<JournalEntries, JournalError
     debug!("Found {} entries.", logs.rows.len());
 
     Ok(logs)
+}
+
+#[tauri::command]
+async fn get_services() -> Result<Vec<Unit>, JournalError> {
+    debug!("Getting services...");
+    let services = Journal::list_services();
+    debug!("found {} services", services.len());
+
+    Ok(Journal::list_services())
 }

@@ -9,12 +9,8 @@ let vm = reactive({
   logSummaryEntries: {} as Record<string, number>,
 });
 
-let journalQuery = {
-  fields: ["PRIORITY", "_SOURCE_REALTIME_TIMESTAMP", "_COMM", "MESSAGE", "_TRANSPORT"],
+let summaryQuery = {
   priority: parseInt("6"),
-  quickSearch: "",
-  limit: 50,
-  resetPosition: true,
 };
 
 type EntriesPerBlockOfTime = Record<string, number>;
@@ -31,7 +27,7 @@ const dateFormat = {
 let maxSummaryValue = 0;
 
 invoke<JournalEntries>("get_summary", {
-  query: journalQuery,
+  query: summaryQuery,
 }).then((response) => {
   // Set timestamp to blocks of 15m
   let logEntries = response.rows.map((r) => Math.floor(Math.floor(parseInt(r[0]) / 1_000_000) / BLOCK_TIME_DURATION_SECONDS));
