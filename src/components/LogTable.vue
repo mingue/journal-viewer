@@ -40,7 +40,7 @@ const columnViewOptions = [
     style: {},
   },
   {
-    name: "Time",
+    name: "Timestamp",
     formatFn: (epochTime: string) => {
       if (epochTime != null) {
         try {
@@ -75,7 +75,7 @@ const columnViewOptions = [
   {
     name: "Transport",
     formatFn: null,
-    visible: false,
+    visible: true,
     style: {},
   },
 ] as ColumnViewOptions[];

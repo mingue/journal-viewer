@@ -8,7 +8,7 @@ use std::{
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct JournalError(i32);
+pub struct JournalError(pub i32);
 
 impl Display for JournalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -171,7 +171,7 @@ pub fn sd_journal_seek_tail(sd_journal: *mut c_void) -> Result<(), JournalError>
     Ok(())
 }
 
-pub fn sd_journal_add_conjunction(sd_journal: *mut c_void) -> Result<bool, JournalError> {
+pub fn sd_journal_add_conjunction(sd_journal: *mut c_void) -> Result<(), JournalError> {
     let ret: libc::c_int;
 
     unsafe {
@@ -182,10 +182,10 @@ pub fn sd_journal_add_conjunction(sd_journal: *mut c_void) -> Result<bool, Journ
         return Err(JournalError(ret));
     }
 
-    Ok(ret > 0)
+    Ok(())
 }
 
-pub fn sd_journal_add_disjunction(sd_journal: *mut c_void) -> Result<bool, JournalError> {
+pub fn sd_journal_add_disjunction(sd_journal: *mut c_void) -> Result<(), JournalError> {
     let ret: libc::c_int;
 
     unsafe {
@@ -196,11 +196,28 @@ pub fn sd_journal_add_disjunction(sd_journal: *mut c_void) -> Result<bool, Journ
         return Err(JournalError(ret));
     }
 
-    Ok(ret > 0)
+    Ok(())
 }
 
 pub fn sd_journal_flush_matches(sd_journal: *mut c_void) {
     unsafe {
         libsdjournal_bindings::sd_journal_flush_matches(sd_journal);
     }
+}
+
+pub fn sd_journal_get_realtime_usec(
+    sd_journal: *mut c_void,
+    microseconds: &mut u64,
+) -> Result<(), JournalError> {
+    let ret: libc::c_int;
+
+    unsafe {
+        ret = libsdjournal_bindings::sd_journal_get_realtime_usec(sd_journal, microseconds);
+    }
+
+    if ret < 0 {
+        return Err(JournalError(ret));
+    }
+
+    Ok(())
 }

@@ -3,8 +3,10 @@ use crate::journal_fields;
 use crate::libsdjournal::*;
 use crate::query::Query;
 use crate::query_builder::QueryBuilder;
+use crate::unit::Unit;
 use bitflags::bitflags;
 use libc::c_void;
+use std::process::Command;
 
 bitflags! {
     #[repr(C)]
@@ -74,6 +76,12 @@ impl Journal {
 
         loop {
             let more = sd_journal_previous(self.ptr)?;
+
+            if !more {
+                debug!("No more entries");
+                break;
+            }
+            
             if let Ok(updated_timestamp) = self.get_field(journal_fields::SOURCE_REALTIME_TIMESTAMP)
             {
                 last_timestamp = updated_timestamp.parse().unwrap();
@@ -85,11 +93,6 @@ impl Journal {
                         continue;
                     }
                 }
-            }
-
-            if !more {
-                debug!("No more entries");
-                break;
             }
 
             if q.limit > 0 && count >= q.limit {
@@ -105,14 +108,26 @@ impl Journal {
             let mut row: Vec<String> = Vec::with_capacity(q.fields.len());
 
             for field in q.fields.iter() {
-                match self.get_field(field) {
-                    Ok(data) => {
-                        row.push(data);
+                match field.as_str() {
+                    "__REALTIME" => {
+                        let mut realtime: u64 = 0;
+                        match sd_journal_get_realtime_usec(self.ptr, &mut realtime) {
+                            Err(JournalError(e)) => {
+                                row.push(String::new());
+                                warn!("Could not get realtime field, error: {}", e);
+                            }
+                            Ok(()) => row.push(realtime.to_string()),
+                        }
                     }
-                    Err(e) => {
-                        row.push(String::new());
-                        warn!("Could not find the field: {}, JournalError: {}", &field, e);
-                    }
+                    _ => match self.get_field(field) {
+                        Ok(data) => {
+                            row.push(data);
+                        }
+                        Err(e) => {
+                            row.push(String::new());
+                            warn!("Could not find the field: {}, JournalError: {}", &field, e);
+                        }
+                    },
                 }
             }
 
@@ -181,6 +196,20 @@ impl Journal {
                 warn!("Could not apply filter {}", e);
             }
         }
+    }
+
+    pub fn list_services() -> Vec<Unit> {
+        let output = Command::new("systemctl")
+            .arg("list-unit-files")
+            .arg("*.service")
+            .arg("-o")
+            .arg("json")
+            .output()
+            .expect("Failed to execute command");
+
+        let stdout = String::from_utf8(output.stdout).unwrap();
+
+        serde_json::from_str(&stdout).unwrap()
     }
 }
 

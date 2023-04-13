@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import type { Filter } from "@/model/Filter";
-import { reactive } from "vue";
+import type { Unit } from "@/model/Unit";
+import { invoke } from "@tauri-apps/api";
+import { onMounted, reactive } from "vue";
 
 let vm = reactive({
   isSidebarCollapsed: true,
   priority: "6",
+  services: [] as Unit[],
+  service: {} as Unit,
 });
 
 const emit = defineEmits<{
@@ -21,14 +25,33 @@ function toggleSidebar(event: Event) {
   }
 }
 
+function getServices() {
+  invoke<Array<Unit>>("get_services")
+    .then((response) => {
+      vm.services = response;
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+}
+
 function filter(event: Event) {
   if (event != null) {
     event.preventDefault();
   }
 
-  emit("filter", { priority: vm.priority });
+  let service = vm.service != null && vm.service.unit_file != null ? vm.service.unit_file : "";
+
+  emit("filter", {
+    priority: vm.priority,
+    service: service,
+  });
   toggleSidebar(event);
 }
+
+onMounted(() => {
+  getServices();
+});
 </script>
 
 <template>
@@ -69,6 +92,14 @@ function filter(event: Event) {
           <option value="7">7 - Debug</option>
         </select>
         <div id="priorityHelp" class="form-text">Higher or equal to</div>
+      </div>
+      <div class="mb-3">
+        <label for="service" class="form-label">Service</label>
+        <select id="service" v-model="vm.service" class="form-select" aria-describedby="serviceHelp">
+          <option value=""></option>
+          <option v-for="u in vm.services" :value="u">{{ u.unit_file.replace(".service", "") }}</option>
+        </select>
+        <div id="priorityHelp" class="form-text">View logs only for the service selected</div>
       </div>
       <button type="submit" class="btn btn-outline-primary" @click="filter">Filter</button>
     </form>

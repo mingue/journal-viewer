@@ -21,6 +21,7 @@ impl QueryBuilder {
                 "syslog".into(),
                 "journal".into(),
                 "stdout".into(),
+                // "kernel".into(),
             ],
             from_epoch: 0,
             quick_search: "".into(),
@@ -103,13 +104,12 @@ impl QueryBuilder {
         self
     }
 
-    pub fn with_unit(&mut self, unit: &str) -> &mut Self {
-        let mut full_unit: String = String::from(unit);
-        if !full_unit.contains('.') {
-            full_unit.push_str(".service");
+    pub fn with_unit(&mut self, mut unit: String) -> &mut Self {
+        if !unit.is_empty() && !unit.contains('.') {
+            unit.push_str(".service");
         }
 
-        self.query.unit = full_unit;
+        self.query.unit = unit;
         self
     }
 
