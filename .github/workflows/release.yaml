@@ -34,5 +34,3 @@ jobs:
           draft: true
           prerelease: true
           generate_release_notes: true
-
-      #TODO: Use tag as version for tauri packages
