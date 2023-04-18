@@ -15,7 +15,7 @@
 - [x] Message text
 - [x] Unit
 - [ ] Time range
-- [ ] Transports
+- [x] Transports
 
 ## Quick filter bar
 

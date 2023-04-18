@@ -11,10 +11,11 @@ import type { Filter } from "./model/Filter";
 let vm = reactive({
   logs: {} as JournalEntries,
   isSidebarCollapsed: true,
-  priority: "6",
+  priority: "5",
   services: [] as string[],
   quickSearch: "",
   theme: "",
+  transports: ["syslog", "journal", "stdout"],
 });
 
 let journalQuery = {
@@ -24,6 +25,7 @@ let journalQuery = {
   quickSearch: vm.quickSearch,
   limit: 50,
   resetPosition: true,
+  transports: [] as string[],
 };
 
 let loadingLogs = false;
@@ -39,6 +41,7 @@ function getLogs(event?: Event) {
   journalQuery.quickSearch = vm.quickSearch;
   journalQuery.resetPosition = true;
   journalQuery.services = vm.services;
+  journalQuery.transports = vm.transports;
 
   loadingLogs = true;
 
@@ -86,6 +89,7 @@ function quickSearch(search: string) {
 function filter(filter: Filter) {
   vm.priority = filter.priority;
   vm.services = filter.services;
+  vm.transports = filter.transports;
   getLogs();
 }
 
@@ -108,7 +112,7 @@ onMounted(() => {
     <SearchBar @quick-search="quickSearch" />
     <!-- Main Content -->
     <div class="d-flex">
-      <FilterSidebar @filter="filter" />
+      <FilterSidebar :priority="vm.priority" :transports="vm.transports" @filter="filter" />
       <div class="flex-fill">
         <LogTable :logs="vm.logs" @load-more="loadNextLogs" />
       </div>
