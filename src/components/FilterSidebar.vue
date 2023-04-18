@@ -3,12 +3,18 @@ import type { Filter } from "@/model/Filter";
 import type { Unit } from "@/model/Unit";
 import { invoke } from "@tauri-apps/api";
 import { onMounted, reactive } from "vue";
+import Multiselect from "@vueform/multiselect";
+
+type ServiceOptions = {
+  value: Unit;
+  label: string;
+};
 
 let vm = reactive({
   isSidebarCollapsed: true,
   priority: "6",
   services: [] as Unit[],
-  service: {} as Unit,
+  servicesOptions: [] as ServiceOptions[],
 });
 
 const emit = defineEmits<{
@@ -28,7 +34,10 @@ function toggleSidebar(event: Event) {
 function getServices() {
   invoke<Array<Unit>>("get_services")
     .then((response) => {
-      vm.services = response;
+      vm.servicesOptions = response.map((x) => ({
+        value: x,
+        label: x.unit_file.replace(".service", ""),
+      }));
     })
     .catch((err) => {
       console.error(err);
@@ -40,11 +49,9 @@ function filter(event: Event) {
     event.preventDefault();
   }
 
-  let service = vm.service != null && vm.service.unit_file != null ? vm.service.unit_file : "";
-
   emit("filter", {
     priority: vm.priority,
-    service: service,
+    services: vm.services.map((x) => x.unit_file),
   });
   toggleSidebar(event);
 }
@@ -95,12 +102,16 @@ onMounted(() => {
       </div>
       <div class="mb-3">
         <label for="service" class="form-label">Service</label>
-        <select id="service" v-model="vm.service" class="form-select" aria-describedby="serviceHelp">
-          <option value=""></option>
-          <option v-for="u in vm.services" :value="u">{{ u.unit_file.replace(".service", "") }}</option>
-        </select>
-        <div id="priorityHelp" class="form-text">View logs only for the service selected</div>
+        <Multiselect
+          v-model="vm.services"
+          :options="vm.servicesOptions"
+          mode="tags"
+          :close-on-select="false"
+          :searchable="true"
+        />
+        <div id="priorityHelp" class="form-text">View logs only for the services selected</div>
       </div>
+
       <button type="submit" class="btn btn-outline-primary" @click="filter">Filter</button>
     </form>
   </div>
@@ -123,5 +134,24 @@ main.dark .filter-content .form-select {
 
 main.dark .filter-content .btn {
   color: #ddd;
+}
+</style>
+<style src="@vueform/multiselect/themes/default.css"></style>
+<style>
+main.dark .multiselect {
+  background-color: #444;
+}
+main.dark .multiselect-tags-search {
+  background-color: #444;
+  color: white;
+}
+main.dark .multiselect-dropdown {
+  background-color: #444;
+}
+main.dark .multiselect-option.is-pointed {
+  background-color: #999;
+}
+main.dark .multiselect-tag {
+  background-color: #2a589c;
 }
 </style>

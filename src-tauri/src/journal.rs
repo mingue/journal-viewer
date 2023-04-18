@@ -56,7 +56,7 @@ impl Journal {
 
         self.apply_pid_filter(q);
         self.apply_minimum_priority(q);
-        self.apply_unit(q);
+        self.apply_units(q);
         self.apply_slice(q);
         self.apply_boot_id(q);
         self.apply_transports_filter(q);
@@ -81,7 +81,7 @@ impl Journal {
                 debug!("No more entries");
                 break;
             }
-            
+
             if let Ok(updated_timestamp) = self.get_field(journal_fields::SOURCE_REALTIME_TIMESTAMP)
             {
                 last_timestamp = updated_timestamp.parse().unwrap();
@@ -171,11 +171,13 @@ impl Journal {
         }
     }
 
-    fn apply_unit(&self, q: &Query) {
-        if !q.unit.is_empty() {
-            let query = format!("{}={}", journal_fields::SYSTEMD_UNIT, q.unit);
-            if let Err(e) = sd_journal_add_match(self.ptr, query) {
-                warn!("Could not apply filter {}", e);
+    fn apply_units(&self, q: &Query) {
+        if !q.units.is_empty() {
+            for unit in q.units.iter() {
+                let query = format!("{}={}", journal_fields::SYSTEMD_UNIT, unit);
+                if let Err(e) = sd_journal_add_match(self.ptr, query) {
+                    warn!("Could not apply filter {}", e);
+                }
             }
         }
     }

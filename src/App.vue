@@ -12,7 +12,7 @@ let vm = reactive({
   logs: {} as JournalEntries,
   isSidebarCollapsed: true,
   priority: "6",
-  service: "",
+  services: [] as string[],
   quickSearch: "",
   theme: "",
 });
@@ -20,7 +20,7 @@ let vm = reactive({
 let journalQuery = {
   fields: ["PRIORITY", "__REALTIME", "_COMM", "MESSAGE", "_TRANSPORT"],
   priority: parseInt(vm.priority),
-  service: "",
+  services: [] as string[],
   quickSearch: vm.quickSearch,
   limit: 50,
   resetPosition: true,
@@ -38,7 +38,7 @@ function getLogs(event?: Event) {
   journalQuery.priority = parseInt(vm.priority);
   journalQuery.quickSearch = vm.quickSearch;
   journalQuery.resetPosition = true;
-  journalQuery.service = vm.service;
+  journalQuery.services = vm.services;
 
   loadingLogs = true;
 
@@ -85,7 +85,7 @@ function quickSearch(search: string) {
 
 function filter(filter: Filter) {
   vm.priority = filter.priority;
-  vm.service = filter.service;
+  vm.services = filter.services;
   getLogs();
 }
 

@@ -12,7 +12,7 @@ impl QueryBuilder {
             pid: 0,
             fields: vec![],
             minimum_priority: 4,
-            unit: String::new(),
+            units: vec![],
             slice: String::new(),
             boot_id: String::new(),
             limit: 100,
@@ -104,12 +104,8 @@ impl QueryBuilder {
         self
     }
 
-    pub fn with_unit(&mut self, mut unit: String) -> &mut Self {
-        if !unit.is_empty() && !unit.contains('.') {
-            unit.push_str(".service");
-        }
-
-        self.query.unit = unit;
+    pub fn with_units(&mut self, units: Vec<String>) -> &mut Self {
+        self.query.units = units;
         self
     }
 
