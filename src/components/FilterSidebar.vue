@@ -5,16 +5,23 @@ import { invoke } from "@tauri-apps/api";
 import { onMounted, reactive } from "vue";
 import Multiselect from "@vueform/multiselect";
 
-type ServiceOptions = {
-  value: Unit;
+const props = defineProps<{
+  transports: string[];
+  priority: string;
+}>();
+
+type SelectOption<T> = {
+  value: T;
   label: string;
 };
 
 let vm = reactive({
   isSidebarCollapsed: true,
-  priority: "6",
+  priority: props.priority,
   services: [] as Unit[],
-  servicesOptions: [] as ServiceOptions[],
+  servicesOptions: [] as SelectOption<Unit>[],
+  transports: props.transports,
+  transportOptions: [] as SelectOption<string>[],
 });
 
 const emit = defineEmits<{
@@ -52,12 +59,21 @@ function filter(event: Event) {
   emit("filter", {
     priority: vm.priority,
     services: vm.services.map((x) => x.unit_file),
+    transports: vm.transports,
   });
   toggleSidebar(event);
 }
 
 onMounted(() => {
   getServices();
+  vm.transportOptions = [
+    { value: "audit", label: "Audit" },
+    { value: "driver", label: "Driver" },
+    { value: "syslog", label: "Syslog" },
+    { value: "journal", label: "Journal" },
+    { value: "stdout", label: "Stdout" },
+    { value: "kernel", label: "Kernel" },
+  ];
 });
 </script>
 
@@ -101,7 +117,7 @@ onMounted(() => {
         <div id="priorityHelp" class="form-text">Higher or equal to</div>
       </div>
       <div class="mb-3">
-        <label for="service" class="form-label">Service</label>
+        <label for="service" class="form-label">Services</label>
         <Multiselect
           v-model="vm.services"
           :options="vm.servicesOptions"
@@ -110,6 +126,17 @@ onMounted(() => {
           :searchable="true"
         />
         <div id="priorityHelp" class="form-text">View logs only for the services selected</div>
+      </div>
+      <div class="mb-3">
+        <label for="transport" class="form-label">Transport</label>
+        <Multiselect
+          v-model="vm.transports"
+          :options="vm.transportOptions"
+          mode="tags"
+          :close-on-select="false"
+          :searchable="true"
+        />
+        <div id="priorityHelp" class="form-text">Select Transports</div>
       </div>
 
       <button type="submit" class="btn btn-outline-primary" @click="filter">Filter</button>
