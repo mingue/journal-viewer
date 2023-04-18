@@ -15,6 +15,7 @@ A modern linux desktop application to visualize systemd logs.
 - A filter bar for more advanced filtering like by Priority, unit, date range... - WIP.
 - Visualize different alerts levels with different styles.
 - Infinite scrolling.
+- Light/Dark theme
 
 ## Built with
 

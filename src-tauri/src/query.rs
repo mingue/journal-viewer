@@ -3,7 +3,7 @@ pub struct Query {
     pub(crate) pid: u32,
     pub(crate) fields: Vec<String>,
     pub(crate) minimum_priority: u32,
-    pub(crate) unit: String,
+    pub(crate) units: Vec<String>,
     pub(crate) slice: String,
     pub(crate) boot_id: String,
     pub(crate) limit: u64,

@@ -60,7 +60,7 @@ pub struct JournalQuery {
     limit: u64,
     quick_search: String,
     reset_position: bool,
-    service: String,
+    services: Vec<String>,
 }
 
 #[tauri::command]
@@ -77,7 +77,7 @@ async fn get_logs(
         .with_quick_search(query.quick_search)
         .reset_position(query.reset_position)
         .with_priority_above_or_equal_to(query.priority)
-        .with_unit(query.service)
+        .with_units(query.services)
         .build();
 
     let lock = journal.lock().await;

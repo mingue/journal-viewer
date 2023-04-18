@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "~1.2",
+    "@vueform/multiselect": "~2.6",
     "bootstrap": "~5.2",
     "bootstrap-icons": "~1.10",
     "vue": "~3.2"
