@@ -17,7 +17,7 @@ mod unit;
 extern crate log;
 
 use crate::query_builder::QueryBuilder;
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use env_logger::Env;
 use journal::{Journal, OpenFlags};
 use journal_entries::JournalEntries;
@@ -62,6 +62,8 @@ pub struct JournalQuery {
     reset_position: bool,
     services: Vec<String>,
     transports: Vec<String>,
+    datetime_from: String,
+    datetime_to: String,
 }
 
 #[tauri::command]
@@ -79,8 +81,20 @@ async fn get_logs(
         .reset_position(query.reset_position)
         .with_priority_above_or_equal_to(query.priority)
         .with_units(query.services)
-        .with_transports(query.transports)
-        .build();
+        .with_transports(query.transports);
+
+    let date_from = DateTime::parse_from_rfc3339(&query.datetime_from).ok();
+    let date_to = DateTime::parse_from_rfc3339(&query.datetime_to).ok();
+
+    if let Some(x) = date_from {
+        q.with_date_not_more_recent_than(x.timestamp_micros() as u64);
+    }
+
+    if let Some(x) = date_to {
+        q.with_date_not_older_than(x.timestamp_micros() as u64);
+    }
+
+    let q = q.build();
 
     let lock = journal.lock().await;
     let logs = lock.query_logs(&q)?;
@@ -105,12 +119,12 @@ async fn get_summary(query: SummaryQuery) -> Result<JournalEntries, JournalError
     )
     .unwrap();
 
-    let from = Utc::now() - Duration::days(1);
+    let datetime_to = Utc::now() - Duration::days(1);
     let mut qb = QueryBuilder::default();
     let q = qb
         .with_fields(vec!["__REALTIME".into()])
         .with_limit(10_000)
-        .with_date_from(from.timestamp_micros() as u64)
+        .with_date_not_older_than(datetime_to.timestamp_micros() as u64)
         .with_priority_above_or_equal_to(query.priority)
         .build();
 
