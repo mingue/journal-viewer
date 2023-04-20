@@ -4,10 +4,13 @@ import type { Unit } from "@/model/Unit";
 import { invoke } from "@tauri-apps/api";
 import { onMounted, reactive } from "vue";
 import Multiselect from "@vueform/multiselect";
+import VueDatePicker from "@vuepic/vue-datepicker";
+import "@vuepic/vue-datepicker/dist/main.css";
 
 const props = defineProps<{
   transports: string[];
   priority: string;
+  theme: string;
 }>();
 
 type SelectOption<T> = {
@@ -22,6 +25,10 @@ let vm = reactive({
   servicesOptions: [] as SelectOption<Unit>[],
   transports: props.transports,
   transportOptions: [] as SelectOption<string>[],
+  notMoreRecentThan: null,
+  notOlderThan: null,
+  datetimeFrom: "",
+  datetimeTo: "",
 });
 
 const emit = defineEmits<{
@@ -56,10 +63,20 @@ function filter(event: Event) {
     event.preventDefault();
   }
 
+  if (vm.datetimeFrom == null) {
+    vm.datetimeFrom = "";
+  }
+
+  if (vm.datetimeTo == null) {
+    vm.datetimeTo = "";
+  }
+
   emit("filter", {
     priority: vm.priority,
     services: vm.services.map((x) => x.unit_file),
     transports: vm.transports,
+    datetimeFrom: vm.datetimeFrom,
+    datetimeTo: vm.datetimeTo,
   });
   toggleSidebar(event);
 }
@@ -83,16 +100,9 @@ onMounted(() => {
     <div class="d-flex flex-column flex-shrink-0" @click="toggleSidebar">
       <ul class="nav nav-pills nav-flush flex-column mb-auto text-center">
         <li class="nav-item">
-          <a
-            href="#"
-            class="nav-link py-3 border-bottom rounded-0"
-            :class="{ active: !vm.isSidebarCollapsed }"
-            aria-current="page"
-            data-bs-toggle="tooltip"
-            data-bs-placement="right"
-            aria-label="Home"
-            data-bs-original-title="Home"
-          >
+          <a href="#" class="nav-link py-3 border-bottom rounded-0" :class="{ active: !vm.isSidebarCollapsed }"
+            aria-current="page" data-bs-toggle="tooltip" data-bs-placement="right" aria-label="Home"
+            data-bs-original-title="Home">
             <i class="bi bi-funnel"></i>
           </a>
         </li>
@@ -114,29 +124,29 @@ onMounted(() => {
           <option value="6">6 - Informational</option>
           <option value="7">7 - Debug</option>
         </select>
-        <div id="priorityHelp" class="form-text">Higher or equal to</div>
+        <div class="form-text">Higher or equal to</div>
+      </div>
+      <div class="mb-3">
+        <label for="recent" class="form-label">From timestamp</label>
+        <VueDatePicker id="recent" v-model="vm.datetimeFrom" text-input v-bind:dark="props.theme == 'dark'" />
+        <div class="form-text">Exclude results more recent than the date indicated</div>
+      </div>
+      <div class="mb-3">
+        <label for="oldest" class="form-label">Until timestamp</label>
+        <VueDatePicker id="oldest" v-model="vm.datetimeTo" text-input v-bind:dark="props.theme == 'dark'" />
+        <div class="form-text">Exclude results older than the date indicated</div>
       </div>
       <div class="mb-3">
         <label for="service" class="form-label">Services</label>
-        <Multiselect
-          v-model="vm.services"
-          :options="vm.servicesOptions"
-          mode="tags"
-          :close-on-select="false"
-          :searchable="true"
-        />
-        <div id="priorityHelp" class="form-text">View logs only for the services selected</div>
+        <Multiselect v-model="vm.services" :options="vm.servicesOptions" mode="tags" :close-on-select="false"
+          :searchable="true" />
+        <div class="form-text">View logs only for the services selected</div>
       </div>
       <div class="mb-3">
         <label for="transport" class="form-label">Transport</label>
-        <Multiselect
-          v-model="vm.transports"
-          :options="vm.transportOptions"
-          mode="tags"
-          :close-on-select="false"
-          :searchable="true"
-        />
-        <div id="priorityHelp" class="form-text">Select Transports</div>
+        <Multiselect v-model="vm.transports" :options="vm.transportOptions" mode="tags" :close-on-select="false"
+          :searchable="true" />
+        <div class="form-text">Select Transports</div>
       </div>
 
       <button type="submit" class="btn btn-outline-primary" @click="filter">Filter</button>
@@ -159,6 +169,11 @@ main.dark .filter-content .form-select {
   color: #ddd;
 }
 
+main.dark .filter-content .form-control {
+  background-color: #444;
+  color: #ddd;
+}
+
 main.dark .filter-content .btn {
   color: #ddd;
 }
@@ -168,17 +183,30 @@ main.dark .filter-content .btn {
 main.dark .multiselect {
   background-color: #444;
 }
+
 main.dark .multiselect-tags-search {
   background-color: #444;
   color: white;
 }
+
 main.dark .multiselect-dropdown {
   background-color: #444;
 }
+
 main.dark .multiselect-option.is-pointed {
   background-color: #999;
 }
+
 main.dark .multiselect-tag {
   background-color: #2a589c;
+}
+
+main.dark .dp__input {
+  background-color: #444;
+  border-color: 1px solid white;
+}
+
+main.dark .dp__action.dp__select {
+  color: #2a589c;
 }
 </style>

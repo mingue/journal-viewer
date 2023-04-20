@@ -16,6 +16,8 @@ let vm = reactive({
   quickSearch: "",
   theme: "",
   transports: ["syslog", "journal", "stdout"],
+  datetimeTo: "",
+  datetimeFrom: "",
 });
 
 let journalQuery = {
@@ -26,6 +28,8 @@ let journalQuery = {
   limit: 50,
   resetPosition: true,
   transports: [] as string[],
+  datetimeTo: "",
+  datetimeFrom: "",
 };
 
 let loadingLogs = false;
@@ -42,6 +46,8 @@ function getLogs(event?: Event) {
   journalQuery.resetPosition = true;
   journalQuery.services = vm.services;
   journalQuery.transports = vm.transports;
+  journalQuery.datetimeFrom = vm.datetimeFrom;
+  journalQuery.datetimeTo = vm.datetimeTo;
 
   loadingLogs = true;
 
@@ -90,6 +96,8 @@ function filter(filter: Filter) {
   vm.priority = filter.priority;
   vm.services = filter.services;
   vm.transports = filter.transports;
+  vm.datetimeTo = filter.datetimeTo;
+  vm.datetimeFrom = filter.datetimeFrom;
   getLogs();
 }
 
@@ -112,7 +120,7 @@ onMounted(() => {
     <SearchBar @quick-search="quickSearch" />
     <!-- Main Content -->
     <div class="d-flex">
-      <FilterSidebar :priority="vm.priority" :transports="vm.transports" @filter="filter" />
+      <FilterSidebar :theme="vm.theme" :priority="vm.priority" :transports="vm.transports" @filter="filter" />
       <div class="flex-fill">
         <LogTable :logs="vm.logs" @load-more="loadNextLogs" />
       </div>

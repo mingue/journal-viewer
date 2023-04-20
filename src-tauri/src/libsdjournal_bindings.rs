@@ -52,4 +52,7 @@ extern "C" {
 
     //int sd_journal_get_realtime_usec(sd_journal *j, uint64_t *usec);
     pub fn sd_journal_get_realtime_usec(sd_journal: *mut c_void, microseconds: *mut u64) -> c_int;
+
+    //int sd_journal_seek_realtime_usec(sd_journal *j, uint64_t usec);
+    pub fn sd_journal_seek_realtime_usec(sd_journal: *mut c_void, microseconds: u64) -> c_int;
 }

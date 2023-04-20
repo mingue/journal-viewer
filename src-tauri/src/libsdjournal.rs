@@ -221,3 +221,20 @@ pub fn sd_journal_get_realtime_usec(
 
     Ok(())
 }
+
+pub fn sd_journal_seek_realtime_usec(
+    sd_journal: *mut c_void,
+    microseconds: u64,
+) -> Result<(), JournalError> {
+    let ret: libc::c_int;
+
+    unsafe {
+        ret = libsdjournal_bindings::sd_journal_seek_realtime_usec(sd_journal, microseconds);
+    }
+
+    if ret < 0 {
+        return Err(JournalError(ret));
+    }
+
+    Ok(())
+}
