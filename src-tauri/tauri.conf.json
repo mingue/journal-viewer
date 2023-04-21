@@ -58,7 +58,7 @@
     },
     "windows": [
       {
-        "fullscreen": true,
+        "fullscreen": false,
         "height": 800,
         "resizable": true,
         "title": "journal-viewer",
