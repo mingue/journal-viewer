@@ -16,7 +16,7 @@
     },
     "bundle": {
       "active": true,
-      "category": "DeveloperTool",
+      "category": "Utility",
       "copyright": "",
       "deb": {
         "depends": [
@@ -33,7 +33,7 @@
         "icons/icon.ico"
       ],
       "identifier": "com.vmingueza.journal-viewer",
-      "longDescription": "",
+      "longDescription": "A modern desktop log viewer for systemd journal",
       "macOS": {
         "entitlements": null,
         "exceptionDomain": "",
@@ -42,7 +42,7 @@
         "signingIdentity": null
       },
       "resources": [],
-      "shortDescription": "",
+      "shortDescription": "A modern desktop log viewer for systemd journal",
       "targets": "deb",
       "windows": {
         "certificateThumbprint": null,
@@ -58,11 +58,11 @@
     },
     "windows": [
       {
-        "fullscreen": false,
-        "height": 600,
+        "fullscreen": true,
+        "height": 800,
         "resizable": true,
         "title": "journal-viewer",
-        "width": 800
+        "width": 1024
       }
     ]
   }
