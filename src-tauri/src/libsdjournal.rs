@@ -238,3 +238,44 @@ pub fn sd_journal_seek_realtime_usec(
 
     Ok(())
 }
+
+pub fn sd_journal_enumerate_available_data(
+    sd_journal: *mut c_void,
+) -> Result<Option<(String, String)>, JournalError> {
+    let mut data: *mut c_void = std::ptr::null_mut();
+    let mut length: size_t = 0;
+    let ret: libc::c_int;
+
+    unsafe {
+        ret = libsdjournal_bindings::sd_journal_enumerate_available_data(
+            sd_journal,
+            &mut data,
+            &mut length,
+        );
+    }
+
+    if ret < 0 {
+        return Err(JournalError(ret));
+    }
+
+    if ret == 0 {
+        return Ok(None)
+    }
+
+    let result = unsafe {
+        match CStr::from_ptr(data as *mut c_char).to_str() {
+            Ok(s) => {
+                let s = String::from(s);
+                let values = s.split_once('=').unwrap();
+                return Ok(Some((values.0.to_owned(), values.1.to_owned())));
+            }
+            Err(_) => Err(-1),
+        }
+    };
+
+    if let Err(e) = result {
+        return Err(JournalError(e));
+    }
+
+    Ok(result.unwrap())
+}

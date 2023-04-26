@@ -20,7 +20,7 @@ use crate::query_builder::QueryBuilder;
 use chrono::{DateTime, Duration, Utc};
 use env_logger::Env;
 use journal::{Journal, OpenFlags};
-use journal_entries::JournalEntries;
+use journal_entries::{JournalEntries, JournalEntry};
 use libsdjournal::JournalError;
 use serde::Deserialize;
 use tauri::async_runtime::Mutex;
@@ -46,7 +46,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_logs,
             get_summary,
-            get_services
+            get_services,
+            get_full_entry,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -101,6 +102,24 @@ async fn get_logs(
     debug!("Found {} entries.", logs.rows.len());
 
     Ok(logs)
+}
+
+#[tauri::command]
+async fn get_full_entry(timestamp: u64) -> Result<JournalEntry, JournalError> {
+    debug!("Getting full entry for timestamp {}...", timestamp);
+
+    let j = Journal::open(
+        OpenFlags::SD_JOURNAL_LOCAL_ONLY
+            | OpenFlags::SD_JOURNAL_SYSTEM
+            | OpenFlags::SD_JOURNAL_CURRENT_USER,
+    )
+    .unwrap();
+
+    let entry = j.get_full_entry(timestamp)?;
+
+    debug!("Found entry for timestamp {}", timestamp);
+
+    Ok(entry)
 }
 
 #[derive(Debug, Deserialize)]

@@ -6,7 +6,7 @@ edition = "2021"
 license = "GPL 3.0"
 name = "journal-viewer"
 repository = "https://github.com/mingue/journal-viewer"
-rust-version = "1.68"
+rust-version = "1.69"
 version = "0.3.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
