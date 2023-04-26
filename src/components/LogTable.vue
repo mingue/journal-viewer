@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref } from "vue";
-import type { JournalEntries } from "@/model/JournalEntries";
+import type { JournalEntries, JournalEntry } from "@/model/JournalEntries";
+import { invoke } from "@tauri-apps/api";
 
 const props = defineProps<{
   logs: JournalEntries;
@@ -12,6 +13,8 @@ const emit = defineEmits<{
 
 let vm = reactive({
   tableTheme: "",
+  expandedRowTimestamp: "",
+  expandedEntry: null as JournalEntry | null,
 });
 
 const scrollComponent = ref<Element | null>(null);
@@ -105,6 +108,27 @@ const handleScroll = () => {
 };
 
 const getRowClass = (row: Array<string>) => `priority-${row[0]}`;
+const visibleColumnsCount = columnViewOptions.filter((x) => x.visible).length;
+
+function toggleFullRecord(timestamp: string) {
+  if (vm.expandedRowTimestamp == timestamp) {
+    vm.expandedRowTimestamp = "";
+    vm.expandedEntry = null;
+    return;
+  }
+
+  invoke<JournalEntry>("get_full_entry", {
+    timestamp: Number.parseInt(timestamp),
+  })
+    .then((response: any) => {
+      vm.expandedEntry = response;
+      vm.expandedRowTimestamp = timestamp;
+      console.log(response);
+    })
+    .catch((e) => {
+      console.error(e);
+    });
+}
 </script>
 
 <template>
@@ -117,13 +141,25 @@ const getRowClass = (row: Array<string>) => `priority-${row[0]}`;
         </th>
       </thead>
       <tbody class="table-group-divider">
-        <tr v-for="row in logs.rows" :class="getRowClass(row)">
-          <td v-for="c in columnViewOptions.filter((x) => x.visible)" :style="c.style">
-            <div :title="row[c.index]">
-              {{ c.formatFn != null ? c.formatFn(row[c.index]) : row[c.index] }}
-            </div>
-          </td>
-        </tr>
+        <template v-for="row in logs.rows">
+          <tr :class="getRowClass(row)" @click="toggleFullRecord(row[1])" style="cursor: pointer;">
+            <td v-for="c in columnViewOptions.filter((x) => x.visible)" :style="c.style">
+              <div :title="row[c.index]">
+                {{ c.formatFn != null ? c.formatFn(row[c.index]) : row[c.index] }}
+              </div>
+            </td>
+          </tr>
+          <tr v-if="vm.expandedRowTimestamp == row[1]">
+            <td :colspan="visibleColumnsCount">
+              <table class="full-entry">
+                <tr v-for="(item, index) in vm.expandedEntry?.headers">
+                  <th>{{ vm.expandedEntry?.headers[index] }}</th>
+                  <td>{{ vm.expandedEntry?.values[index] }}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </template>
       </tbody>
     </table>
   </div>
@@ -170,8 +206,7 @@ const getRowClass = (row: Array<string>) => `priority-${row[0]}`;
   background-color: red;
 }
 
-.priority-3 {
-}
+.priority-3 {}
 
 .priority-3 td:first-child div {
   width: 4px;
@@ -179,8 +214,7 @@ const getRowClass = (row: Array<string>) => `priority-${row[0]}`;
   background-color: red;
 }
 
-.priority-4 {
-}
+.priority-4 {}
 
 .priority-4 td:first-child div {
   width: 4px;
@@ -188,8 +222,7 @@ const getRowClass = (row: Array<string>) => `priority-${row[0]}`;
   background-color: rgb(255, 136, 0);
 }
 
-.priority-5 {
-}
+.priority-5 {}
 
 .priority-5 td:first-child div {
   width: 4px;
@@ -204,7 +237,8 @@ const getRowClass = (row: Array<string>) => `priority-${row[0]}`;
 main.dark .priority-6 {
   color: #bbb;
 }
-main.dark .table-striped > tbody > tr.priority-6:nth-of-type(odd) > * {
+
+main.dark .table-striped>tbody>tr.priority-6:nth-of-type(odd)>* {
   color: #bbb;
 }
 
@@ -220,12 +254,17 @@ main.dark .table-striped > tbody > tr.priority-6:nth-of-type(odd) > * {
 main.dark .priority-7 {
   color: #666;
 }
-main.dark .table-striped > tbody > tr.priority-7:nth-of-type(odd) > * {
+
+main.dark .table-striped>tbody>tr.priority-7:nth-of-type(odd)>* {
   color: #666;
 }
 
 .priority-7 td:first-child div {
   width: 4px;
   height: 24px;
+}
+
+.full-entry tr td {
+  padding-left: 20px;
 }
 </style>

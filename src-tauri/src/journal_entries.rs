@@ -16,3 +16,18 @@ impl JournalEntries {
         }
     }
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct JournalEntry {
+    pub headers: Vec<String>,
+    pub values: Vec<String>,
+}
+
+impl JournalEntry {
+    pub fn new() -> JournalEntry {
+        JournalEntry{
+            headers: vec![],
+            values: vec![],
+        }
+    }
+}

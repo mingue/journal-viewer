@@ -1,4 +1,5 @@
 use crate::journal_entries::JournalEntries;
+use crate::journal_entries::JournalEntry;
 use crate::journal_fields;
 use crate::libsdjournal::*;
 use crate::query::Query;
@@ -140,6 +141,26 @@ impl Journal {
         }
 
         Ok(journal_entries)
+    }
+
+    pub fn get_full_entry(&self, timestamp: u64) -> Result<JournalEntry, JournalError> {
+        sd_journal_seek_realtime_usec(self.ptr, timestamp)?;
+
+        let more = sd_journal_previous(self.ptr)?;
+
+        if !more {
+            error!("Entry not found by the timestamp");
+            return Err(JournalError(0));
+        }
+
+        let mut entry = JournalEntry::new();
+
+        while let Some(x) = sd_journal_enumerate_available_data(self.ptr)? {
+            entry.headers.push(x.0);
+            entry.values.push(x.1);
+        }
+
+        Ok(entry)
     }
 
     fn get_field(&self, field: &str) -> Result<String, JournalError> {
