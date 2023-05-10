@@ -1,3 +1,4 @@
+use crate::boot::Boot;
 use crate::journal_entries::JournalEntries;
 use crate::journal_entries::JournalEntry;
 use crate::journal_fields;
@@ -59,7 +60,7 @@ impl Journal {
         self.apply_minimum_priority(q);
         self.apply_units(q);
         self.apply_slice(q);
-        self.apply_boot_id(q);
+        self.apply_boot_ids(q);
         self.apply_transports_filter(q);
 
         let mut journal_entries = JournalEntries::new(q.limit as usize);
@@ -216,11 +217,13 @@ impl Journal {
         }
     }
 
-    fn apply_boot_id(&self, q: &Query) {
-        if !q.boot_id.is_empty() {
-            let query = format!("{}={}", journal_fields::BOOT_ID, q.boot_id);
-            if let Err(e) = sd_journal_add_match(self.ptr, query) {
-                warn!("Could not apply filter {}", e);
+    fn apply_boot_ids(&self, q: &Query) {
+        if !q.boot_ids.is_empty() {
+            for boot_id in q.boot_ids.iter() {
+                let query = format!("{}={}", journal_fields::BOOT_ID, boot_id);
+                if let Err(e) = sd_journal_add_match(self.ptr, query) {
+                    warn!("Could not apply filter {}", e);
+                }
             }
         }
     }
@@ -229,6 +232,20 @@ impl Journal {
         let output = Command::new("systemctl")
             .arg("list-unit-files")
             .arg("*.service")
+            .arg("-o")
+            .arg("json")
+            .output()
+            .expect("Failed to execute command");
+
+        let stdout = String::from_utf8(output.stdout).unwrap();
+
+        serde_json::from_str(&stdout).unwrap()
+    }
+
+    pub fn list_boots() -> Vec<Boot> {
+        let output = Command::new("journalctl")
+            .arg("--list-boots")
+            .arg("-r")
             .arg("-o")
             .arg("json")
             .output()
