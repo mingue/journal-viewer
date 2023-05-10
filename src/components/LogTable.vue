@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, reactive, ref } from "vue";
 import type { JournalEntries, JournalEntry } from "@/model/JournalEntries";
 import { invoke } from "@tauri-apps/api";
+import { formatEpoch } from "@/common/DateFormatter";
 
 const props = defineProps<{
   logs: JournalEntries;
@@ -27,14 +28,6 @@ type ColumnViewOptions = {
   style: any;
 };
 
-const dateFormat = {
-  month: "numeric",
-  day: "numeric",
-  hour: "numeric",
-  minute: "numeric",
-  second: "numeric",
-  hour12: false,
-};
 const columnViewOptions = [
   {
     name: "", // Priority
@@ -44,16 +37,7 @@ const columnViewOptions = [
   },
   {
     name: "Timestamp",
-    formatFn: (epochTime: string) => {
-      if (epochTime != null) {
-        try {
-          return new Date(parseInt(epochTime) / 1000).toLocaleString(undefined, dateFormat);
-        } catch (error) {
-          return epochTime;
-        }
-      }
-      return epochTime;
-    },
+    formatFn: formatEpoch,
     visible: true,
     style: { width: "8rem" },
   },

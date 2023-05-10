@@ -4,6 +4,7 @@
     windows_subsystem = "windows"
 )]
 
+mod boot;
 mod journal;
 mod journal_entries;
 mod journal_fields;
@@ -17,6 +18,7 @@ mod unit;
 extern crate log;
 
 use crate::query_builder::QueryBuilder;
+use boot::Boot;
 use chrono::{DateTime, Duration, Utc};
 use env_logger::Env;
 use journal::{Journal, OpenFlags};
@@ -48,6 +50,7 @@ fn main() {
             get_summary,
             get_services,
             get_full_entry,
+            get_boots,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -65,6 +68,7 @@ pub struct JournalQuery {
     transports: Vec<String>,
     datetime_from: String,
     datetime_to: String,
+    boot_ids: Vec<String>,
 }
 
 #[tauri::command]
@@ -82,7 +86,8 @@ async fn get_logs(
         .reset_position(query.reset_position)
         .with_priority_above_or_equal_to(query.priority)
         .with_units(query.services)
-        .with_transports(query.transports);
+        .with_transports(query.transports)
+        .with_boot_ids(query.boot_ids);
 
     let date_from = DateTime::parse_from_rfc3339(&query.datetime_from).ok();
     let date_to = DateTime::parse_from_rfc3339(&query.datetime_to).ok();
@@ -159,5 +164,14 @@ async fn get_services() -> Result<Vec<Unit>, JournalError> {
     let services = Journal::list_services();
     debug!("found {} services", services.len());
 
-    Ok(Journal::list_services())
+    Ok(services)
+}
+
+#[tauri::command]
+async fn get_boots() -> Result<Vec<Boot>, JournalError> {
+    debug!("Getting boots...");
+    let boots = Journal::list_boots();
+    debug!("found {} boots", boots.len());
+
+    Ok(boots)
 }

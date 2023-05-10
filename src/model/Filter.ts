@@ -4,4 +4,5 @@ export type Filter = {
   transports: string[];
   datetimeFrom: string;
   datetimeTo: string;
+  bootIds: string[];
 };

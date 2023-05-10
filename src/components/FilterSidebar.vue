@@ -5,7 +5,10 @@ import { invoke } from "@tauri-apps/api";
 import { onMounted, reactive } from "vue";
 import Multiselect from "@vueform/multiselect";
 import VueDatePicker from "@vuepic/vue-datepicker";
+import type { Boot } from "@/model/Boot";
+import { formatEpoch } from "@/common/DateFormatter";
 import "@vuepic/vue-datepicker/dist/main.css";
+import "@vueform/multiselect/themes/default.css";
 
 const props = defineProps<{
   transports: string[];
@@ -29,6 +32,8 @@ let vm = reactive({
   notOlderThan: null,
   datetimeFrom: "",
   datetimeTo: "",
+  boots: [] as Boot[],
+  bootsOptions: [] as SelectOption<Boot>[],
 });
 
 const emit = defineEmits<{
@@ -58,6 +63,19 @@ function getServices() {
     });
 }
 
+function getBoots() {
+  invoke<Array<Boot>>("get_boots")
+    .then((response) => {
+      vm.bootsOptions = response.map((x) => ({
+        value: x,
+        label: `${x.index.toString()} - from: ${formatEpoch(x.first_entry.toString())}, to: ${formatEpoch(x.last_entry.toString())}`,
+      }));
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+}
+
 function filter(event: Event) {
   if (event != null) {
     event.preventDefault();
@@ -77,12 +95,14 @@ function filter(event: Event) {
     transports: vm.transports,
     datetimeFrom: vm.datetimeFrom,
     datetimeTo: vm.datetimeTo,
+    bootIds: vm.boots.map((x) => x.boot_id),
   });
   toggleSidebar(event);
 }
 
 onMounted(() => {
   getServices();
+  getBoots();
   vm.transportOptions = [
     { value: "audit", label: "Audit" },
     { value: "driver", label: "Driver" },
@@ -148,6 +168,12 @@ onMounted(() => {
           :searchable="true" />
         <div class="form-text">Select Transports</div>
       </div>
+      <div class="mb-3">
+        <label for="boot" class="form-label">Boots</label>
+        <Multiselect v-model="vm.boots" :options="vm.bootsOptions" mode="tags" :close-on-select="false"
+          :searchable="true" />
+        <div class="form-text">View logs only for the boots selected</div>
+      </div>
 
       <button type="submit" class="btn btn-outline-primary" @click="filter">Filter</button>
     </form>
@@ -178,7 +204,6 @@ main.dark .filter-content .btn {
   color: #ddd;
 }
 </style>
-<style src="@vueform/multiselect/themes/default.css"></style>
 <style>
 main.dark .multiselect {
   background-color: #444;

@@ -18,6 +18,7 @@ let vm = reactive({
   transports: ["syslog", "journal", "stdout"],
   datetimeTo: "",
   datetimeFrom: "",
+  bootIds: [] as string[],
 });
 
 let journalQuery = {
@@ -30,6 +31,7 @@ let journalQuery = {
   transports: [] as string[],
   datetimeTo: "",
   datetimeFrom: "",
+  bootIds: [] as string[],
 };
 
 let loadingLogs = false;
@@ -48,6 +50,7 @@ function getLogs(event?: Event) {
   journalQuery.transports = vm.transports;
   journalQuery.datetimeFrom = vm.datetimeFrom;
   journalQuery.datetimeTo = vm.datetimeTo;
+  journalQuery.bootIds = vm.bootIds;
 
   loadingLogs = true;
 
@@ -98,6 +101,7 @@ function filter(filter: Filter) {
   vm.transports = filter.transports;
   vm.datetimeTo = filter.datetimeTo;
   vm.datetimeFrom = filter.datetimeFrom;
+  vm.bootIds = filter.bootIds;
   getLogs();
 }
 

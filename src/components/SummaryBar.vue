@@ -2,6 +2,7 @@
 import { reactive } from "vue";
 import { invoke } from "@tauri-apps/api";
 import type { JournalEntries } from "@/model/JournalEntries";
+import { formatEpoch } from "@/common/DateFormatter";
 
 const BLOCK_TIME_DURATION_SECONDS = 900;
 
@@ -14,15 +15,6 @@ let summaryQuery = {
 };
 
 type EntriesPerBlockOfTime = Record<string, number>;
-
-const dateFormat = {
-  month: "numeric",
-  day: "numeric",
-  hour: "numeric",
-  minute: "numeric",
-  second: "numeric",
-  hour12: false,
-};
 
 let maxSummaryValue = 0;
 
@@ -71,14 +63,6 @@ invoke<JournalEntries>("get_summary", {
   vm.logSummaryEntries = itemsPerTimestampBlock;
 });
 
-const getSummaryDate = (x: string) => {
-  try {
-    return new Date(parseInt(x)).toLocaleString(undefined, dateFormat);
-  } catch (error) {
-    return x;
-  }
-};
-
 const xLegendShortFormat = {
   hour: "numeric",
   minute: "numeric",
@@ -120,7 +104,7 @@ const getXLegendDate = (x: string, index: number) => {
     <div
       class="flex-fill summary-cell"
       v-for="(v, k, index) in vm.logSummaryEntries"
-      :title="`Date: ${getSummaryDate(k)}, Value: ${v}`"
+      :title="`Date: ${formatEpoch(k)}, Value: ${v}`"
     >
       <div class="summary-value" :style="{ height: (v / maxSummaryValue) * 100 + '%' }">&nbsp;</div>
 

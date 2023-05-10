@@ -14,7 +14,7 @@ impl QueryBuilder {
             minimum_priority: 4,
             units: vec![],
             slice: String::new(),
-            boot_id: String::new(),
+            boot_ids: vec![],
             limit: 100,
             transports: vec!["syslog".into(), "journal".into(), "stdout".into()],
             no_more_recent_than_epoch: 0,
@@ -114,8 +114,8 @@ impl QueryBuilder {
         self
     }
 
-    pub fn with_boot_id(&mut self, boot_id: &str) -> &mut Self {
-        self.query.boot_id = String::from(boot_id);
+    pub fn with_boot_ids(&mut self, boot_ids: Vec<String>) -> &mut Self {
+        self.query.boot_ids = boot_ids;
         self
     }
 
