@@ -156,7 +156,11 @@ impl Journal {
 
         let mut entry = JournalEntry::new();
 
-        while let Some(x) = sd_journal_enumerate_available_data(self.ptr)? {
+        while let Some(x) = sd_journal_enumerate_data(self.ptr)? {
+            if x.0.is_empty() {
+                continue;
+            }
+
             entry.headers.push(x.0);
             entry.values.push(x.1);
         }
