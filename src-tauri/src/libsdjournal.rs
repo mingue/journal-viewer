@@ -1,19 +1,16 @@
 use crate::libsdjournal_bindings;
 use libc::{c_char, c_void, size_t};
 use serde::Serialize;
-use std::{
-    ffi::{CStr, CString},
-    fmt::Display,
-};
+use std::ffi::{CStr, CString};
+use thiserror::Error;
 
-#[derive(Debug, Serialize)]
+#[derive(Error, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct JournalError(pub i32);
-
-impl Display for JournalError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
+pub enum JournalError {
+    #[error("Internal error while invoking systemd. Error Code: {0}")]
+    Internal(i32),
+    #[error("Reached the end of the cursor")]
+    EndOfFile,
 }
 
 pub fn sd_journal_open(sd_journal: &mut *mut c_void, flags: u32) -> Result<(), JournalError> {
@@ -23,7 +20,7 @@ pub fn sd_journal_open(sd_journal: &mut *mut c_void, flags: u32) -> Result<(), J
         ret = libsdjournal_bindings::sd_journal_open(sd_journal, flags);
     }
     if ret != 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     Ok(())
@@ -43,7 +40,7 @@ pub fn sd_journal_next(sd_journal: *mut c_void) -> Result<bool, JournalError> {
     }
 
     if ret < 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     Ok(ret > 0)
@@ -57,7 +54,7 @@ pub fn sd_journal_previous(sd_journal: *mut c_void) -> Result<bool, JournalError
     }
 
     if ret < 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     Ok(ret > 0)
@@ -71,7 +68,7 @@ pub fn sd_journal_next_skip(sd_journal: *mut c_void, skip: u64) -> Result<bool, 
     }
 
     if ret < 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     Ok(ret > 0)
@@ -85,7 +82,7 @@ pub fn sd_journal_previous_skip(sd_journal: *mut c_void, skip: u64) -> Result<bo
     }
 
     if ret < 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     Ok(ret > 0)
@@ -106,7 +103,7 @@ pub fn sd_journal_get_data(sd_journal: *mut c_void, field: &str) -> Result<Strin
     }
 
     if ret < 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     let result = unsafe {
@@ -124,7 +121,7 @@ pub fn sd_journal_get_data(sd_journal: *mut c_void, field: &str) -> Result<Strin
     };
 
     if let Err(e) = result {
-        return Err(JournalError(e));
+        return Err(JournalError::Internal(e));
     }
 
     Ok(result.unwrap())
@@ -139,7 +136,7 @@ pub fn sd_journal_add_match(sd_journal: *mut c_void, data: String) -> Result<(),
     }
 
     if ret < 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     Ok(())
@@ -152,7 +149,7 @@ pub fn sd_journal_seek_head(sd_journal: *mut c_void) -> Result<(), JournalError>
         ret = libsdjournal_bindings::sd_journal_seek_head(sd_journal);
     }
     if ret != 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     Ok(())
@@ -165,7 +162,7 @@ pub fn sd_journal_seek_tail(sd_journal: *mut c_void) -> Result<(), JournalError>
         ret = libsdjournal_bindings::sd_journal_seek_tail(sd_journal);
     }
     if ret != 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     Ok(())
@@ -179,7 +176,7 @@ pub fn sd_journal_add_conjunction(sd_journal: *mut c_void) -> Result<(), Journal
     }
 
     if ret < 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     Ok(())
@@ -193,7 +190,7 @@ pub fn sd_journal_add_disjunction(sd_journal: *mut c_void) -> Result<(), Journal
     }
 
     if ret < 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     Ok(())
@@ -216,7 +213,7 @@ pub fn sd_journal_get_realtime_usec(
     }
 
     if ret < 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     Ok(())
@@ -233,7 +230,7 @@ pub fn sd_journal_seek_realtime_usec(
     }
 
     if ret < 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     Ok(())
@@ -241,9 +238,8 @@ pub fn sd_journal_seek_realtime_usec(
 
 pub fn sd_journal_enumerate_data(
     sd_journal: *mut c_void,
-) -> Result<Option<(String, String)>, JournalError> {
+) -> Result<(String, String), JournalError> {
     // TODO: Refactor so that it returns the whole record not field by field
-    // TODO: Enrich JournalError to avoid using Result<Option>
     let mut data: *mut c_void = std::ptr::null_mut();
     let mut length: size_t = 0;
     let ret: libc::c_int;
@@ -254,15 +250,15 @@ pub fn sd_journal_enumerate_data(
 
     // Skip field in this situation
     if ret == -libc::E2BIG || ret == -libc::ENOBUFS || ret == -libc::EPROTONOSUPPORT {
-        return Ok(Some(("".to_owned(), "".to_owned())));
+        return Ok(("".to_owned(), "".to_owned()));
     }
 
     if ret < 0 {
-        return Err(JournalError(ret));
+        return Err(JournalError::Internal(ret));
     }
 
     if ret == 0 {
-        return Ok(None);
+        return Err(JournalError::EndOfFile);
     }
 
     let result = unsafe {
@@ -270,14 +266,14 @@ pub fn sd_journal_enumerate_data(
             Ok(s) => {
                 let s = String::from(s);
                 let values = s.split_once('=').unwrap();
-                return Ok(Some((values.0.to_owned(), values.1.to_owned())));
+                return Ok((values.0.to_owned(), values.1.to_owned()));
             }
             Err(_) => Err(-1),
         }
     };
 
     if let Err(e) = result {
-        return Err(JournalError(e));
+        return Err(JournalError::Internal(e));
     }
 
     Ok(result.unwrap())
@@ -285,9 +281,8 @@ pub fn sd_journal_enumerate_data(
 
 // pub fn sd_journal_enumerate_available_data(
 //     sd_journal: *mut c_void,
-// ) -> Result<Option<(String, String)>, JournalError> {
+// ) -> Result<(String, String), JournalError> {
 //     // TODO: Refactor so that it returns the whole record not field by field
-//     // TODO: Enrich JournalError to avoid using Result<Option>
 //     let mut data: *mut c_void = std::ptr::null_mut();
 //     let mut length: size_t = 0;
 //     let ret: libc::c_int;
@@ -301,11 +296,11 @@ pub fn sd_journal_enumerate_data(
 //     }
 
 //     if ret < 0 {
-//         return Err(JournalError(ret));
+//         return Err(JournalError::Internal(ret));
 //     }
 
 //     if ret == 0 {
-//         return Ok(None);
+//         return Err(JournalError::EndOfFile);
 //     }
 
 //     let result = unsafe {
@@ -313,14 +308,14 @@ pub fn sd_journal_enumerate_data(
 //             Ok(s) => {
 //                 let s = String::from(s);
 //                 let values = s.split_once('=').unwrap();
-//                 return Ok(Some((values.0.to_owned(), values.1.to_owned())));
+//                 return Ok((values.0.to_owned(), values.1.to_owned()));
 //             }
 //             Err(_) => Err(-1),
 //         }
 //     };
 
 //     if let Err(e) = result {
-//         return Err(JournalError(e));
+//         return Err(JournalError::Internal(e));
 //     }
 
 //     Ok(result.unwrap())

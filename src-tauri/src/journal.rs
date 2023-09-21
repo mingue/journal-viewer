@@ -118,11 +118,14 @@ impl Journal {
                     "__REALTIME" => {
                         let mut realtime: u64 = 0;
                         match sd_journal_get_realtime_usec(self.ptr, &mut realtime) {
-                            Err(JournalError(e)) => {
+                            Ok(()) => row.push(realtime.to_string()),
+                            Err(JournalError::Internal(e)) => {
                                 row.push(String::new());
                                 warn!("Could not get realtime field, error: {}", e);
                             }
-                            Ok(()) => row.push(realtime.to_string()),
+                            Err(JournalError::EndOfFile) => {
+                                panic!("should not return end of file")
+                            }
                         }
                     }
                     _ => match self.get_field(field) {
@@ -151,18 +154,24 @@ impl Journal {
 
         if !more {
             error!("Entry not found by the timestamp");
-            return Err(JournalError(0));
+            return Err(JournalError::Internal(0));
         }
 
         let mut entry = JournalEntry::new();
 
-        while let Some(x) = sd_journal_enumerate_data(self.ptr)? {
-            if x.0.is_empty() {
-                continue;
+        loop {
+            match sd_journal_enumerate_data(self.ptr) {
+                Ok(x) => {
+                    if !x.0.is_empty() {
+                        entry.headers.push(x.0);
+                        entry.values.push(x.1);
+                    }
+                }
+                Err(err) => match err {
+                    JournalError::EndOfFile => break, // If we reach the end just ignore
+                    _ => return Err(err),          // Other type of error, return it
+                },
             }
-
-            entry.headers.push(x.0);
-            entry.values.push(x.1);
         }
 
         Ok(entry)

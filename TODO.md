@@ -16,7 +16,7 @@
 - [x] Unit
 - [x] Time range
 - [x] Transports
-- [ ] Boot
+- [x] Boot
 
 ## Quick filter bar
 
@@ -33,7 +33,7 @@
 
 ## Refactor to use anyhow
 
-- [ ] Use anyhow crate for app errors
+- [x] Use anyhow crate for app errors
 
 ## Publish to AUR
 
