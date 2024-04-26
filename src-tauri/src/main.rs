@@ -106,14 +106,14 @@ async fn get_logs(
     let date_to = DateTime::parse_from_rfc3339(&query.datetime_to).ok();
 
     if let Some(x) = date_from {
-        q.with_date_not_more_recent_than(x.timestamp_micros() as u64);
-    } else {
-        let datetime_to = Utc::now() - Duration::days(1);
-        q.with_date_not_more_recent_than(datetime_to.timestamp_micros() as u64);
+        q.with_date_more_than(x.timestamp_micros() as u64);
     }
 
     if let Some(x) = date_to {
-        q.with_date_not_older_than(x.timestamp_micros() as u64);
+        q.with_date_less_than(x.timestamp_micros() as u64);
+    } else {
+        let datetime_to = Utc::now() + Duration::days(1);
+        q.with_date_less_than(datetime_to.timestamp_micros() as u64);
     }
 
     let q = q.build();
@@ -159,14 +159,14 @@ async fn get_summary(query: SummaryQuery) -> Result<JournalEntries, JournalError
     )
     .unwrap();
 
-    let datetime_to = Utc::now() - Duration::days(5);
-    let datetime_from = Utc::now() + Duration::days(1);
+    let datetime_from = Utc::now() - Duration::days(5);
+    let datetime_to = Utc::now() + Duration::days(1);
     let mut qb = QueryBuilder::default();
     let q = qb
         .with_fields(vec!["__REALTIME".into()])
         .with_limit(10_000)
-        .with_date_not_older_than(datetime_to.timestamp_micros() as u64)
-        .with_date_not_more_recent_than(datetime_from.timestamp_micros() as u64)
+        .with_date_more_than(datetime_from.timestamp_micros() as u64)
+        .with_date_less_than(datetime_to.timestamp_micros() as u64)
         .with_priority_above_or_equal_to(query.priority)
         .build();
 

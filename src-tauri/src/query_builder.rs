@@ -17,8 +17,8 @@ impl QueryBuilder {
             boot_ids: vec![],
             limit: 100,
             transports: vec!["syslog".into(), "journal".into(), "stdout".into()],
-            no_more_recent_than_epoch: 0,
-            not_older_than_epoch: 0,
+            date_less_than: 0,
+            date_more_than: 0,
             quick_search: "".into(),
             reset_position: true,
         };
@@ -84,13 +84,13 @@ impl QueryBuilder {
         self
     }
 
-    pub fn with_date_not_more_recent_than(&mut self, from_epoch: u64) -> &mut Self {
-        self.query.no_more_recent_than_epoch = from_epoch;
+    pub fn with_date_less_than(&mut self, from_epoch: u64) -> &mut Self {
+        self.query.date_less_than = from_epoch;
         self
     }
 
-    pub fn with_date_not_older_than(&mut self, to_epoch: u64) -> &mut Self {
-        self.query.not_older_than_epoch = to_epoch;
+    pub fn with_date_more_than(&mut self, to_epoch: u64) -> &mut Self {
+        self.query.date_more_than = to_epoch;
         self
     }
 

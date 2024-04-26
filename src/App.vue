@@ -96,7 +96,7 @@ function quickSearch(search: string) {
 }
 
 function toggleTheme() {
-  vm.theme == "dark" ? vm.theme = "" : vm.theme = "dark"
+  vm.theme == "dark" ? (vm.theme = "") : (vm.theme = "dark");
 }
 
 function filter(filter: Filter) {

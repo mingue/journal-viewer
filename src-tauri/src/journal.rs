@@ -75,8 +75,8 @@ impl Journal {
             sd_journal_seek_tail(self.ptr)?;
         }
 
-        if q.reset_position && q.no_more_recent_than_epoch > 0 {
-            sd_journal_seek_realtime_usec(self.ptr, q.no_more_recent_than_epoch)?;
+        if q.reset_position && q.date_less_than > 0 {
+            sd_journal_seek_realtime_usec(self.ptr, q.date_less_than)?;
         }
 
         let mut count: u64 = 0;
@@ -112,8 +112,8 @@ impl Journal {
                 break;
             }
 
-            if q.not_older_than_epoch > 0 && q.not_older_than_epoch >= last_timestamp {
-                debug!("Reached epoch time of {}", q.not_older_than_epoch);
+            if q.date_more_than > 0 && q.date_more_than >= last_timestamp {
+                debug!("Reached epoch time of {}", q.date_more_than);
                 break;
             }
 
