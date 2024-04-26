@@ -1,16 +1,26 @@
 export const dateFormat = {
-  month: "numeric",
+  month: "2-digit",
   day: "numeric",
-  hour: "numeric",
-  minute: "numeric",
-  second: "numeric",
+  year: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
   hour12: false,
 };
 
-export const formatEpoch = (epochTime: string) => {
+export const dateFormatNoSecs = {
+  month: "2-digit",
+  day: "numeric",
+  year: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+};
+
+export const formatEpoch = (epochTime: string, includeSecs: boolean = false) => {
   if (epochTime != null) {
     try {
-      return new Date(parseInt(epochTime) / 1000).toLocaleString(undefined, dateFormat);
+      return new Date(parseInt(epochTime)).toLocaleString(undefined, includeSecs ? dateFormat : dateFormatNoSecs);
     } catch (error) {
       return epochTime;
     }

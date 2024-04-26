@@ -23,6 +23,7 @@ type SelectOption<T> = {
 
 let vm = reactive({
   isSidebarCollapsed: true,
+  isRefreshing: false,
   priority: props.priority,
   services: [] as Unit[],
   servicesOptions: [] as SelectOption<Unit>[],
@@ -68,7 +69,7 @@ function getBoots() {
     .then((response) => {
       vm.bootsOptions = response.map((x) => ({
         value: x,
-        label: `${x.index.toString()} - from: ${formatEpoch(x.first_entry.toString())}, to: ${formatEpoch(x.last_entry.toString())}`,
+        label: `${x.index.toString()} - from: ${formatEpoch((parseInt(x.first_entry.toString()) / 1000).toString())}, to: ${formatEpoch((parseInt(x.last_entry.toString()) / 1000).toString())}`,
       }));
     })
     .catch((err) => {
@@ -76,7 +77,20 @@ function getBoots() {
     });
 }
 
+function refresh(event: Event) {
+  vm.isRefreshing = true;
+  filterInternal(event);
+  setTimeout(() => {
+    vm.isRefreshing = false;
+  }, 200);
+}
+
 function filter(event: Event) {
+  filterInternal(event);
+  toggleSidebar(event);
+}
+
+function filterInternal(event: Event) {
   if (event != null) {
     event.preventDefault();
   }
@@ -97,7 +111,6 @@ function filter(event: Event) {
     datetimeTo: vm.datetimeTo,
     bootIds: vm.boots.map((x) => x.boot_id),
   });
-  toggleSidebar(event);
 }
 
 onMounted(() => {
@@ -117,13 +130,18 @@ onMounted(() => {
 <template>
   <div class="flex">
     <!-- Filter menu -->
-    <div class="d-flex flex-column flex-shrink-0" @click="toggleSidebar">
+    <div class="d-flex flex-column flex-shrink-0">
       <ul class="nav nav-pills nav-flush flex-column mb-auto text-center">
-        <li class="nav-item">
-          <a href="#" class="nav-link py-3 border-bottom rounded-0" :class="{ active: !vm.isSidebarCollapsed }"
-            aria-current="page" data-bs-toggle="tooltip" data-bs-placement="right" aria-label="Home"
-            data-bs-original-title="Home">
+        <li class="nav-item" @click="toggleSidebar" title="Toggle Filter">
+          <a href="#" class="nav-link py-3 rounded-0" :class="{ active: !vm.isSidebarCollapsed }" aria-current="page"
+            data-bs-toggle="tooltip" data-bs-placement="right" aria-label="Home" data-bs-original-title="Home">
             <i class="bi bi-funnel"></i>
+          </a>
+        </li>
+        <li class="nav-item" @click="refresh" title="Refresh">
+          <a href="#" class="nav-link py-3 rounded-0" :class="{ active: vm.isRefreshing }" aria-current="page"
+            data-bs-toggle="tooltip" data-bs-placement="right" aria-label="Home" data-bs-original-title="Home">
+            <i class="bi bi-arrow-clockwise"></i>
           </a>
         </li>
       </ul>
@@ -188,6 +206,8 @@ onMounted(() => {
 
 main.dark .filter-content {
   color: #ddd;
+  border-right: 1px solid white;
+  border-left: 1px solid white;
 }
 
 main.dark .filter-content .form-select {

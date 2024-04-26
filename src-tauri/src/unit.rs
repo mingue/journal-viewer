@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Unit {
-    unit_file: String,
-    state: String,
-    preset: Option<String>
+    pub unit_file: String,
+    pub state: String,
+    pub preset: Option<String>
 }

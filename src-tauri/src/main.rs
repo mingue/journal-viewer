@@ -17,7 +17,7 @@ mod unit;
 #[macro_use]
 extern crate log;
 
-use crate::query_builder::QueryBuilder;
+use crate::{journal::INIT_UNIT, query_builder::QueryBuilder};
 use boot::Boot;
 use chrono::{DateTime, Duration, Utc};
 use env_logger::Env;
@@ -73,10 +73,18 @@ pub struct JournalQuery {
 
 #[tauri::command]
 async fn get_logs(
-    query: JournalQuery,
+    mut query: JournalQuery,
     journal: tauri::State<'_, Mutex<Journal>>,
 ) -> Result<JournalEntries, JournalError> {
     debug!("Getting logs...");
+
+    // If systemd service is specified, remove from unit filter
+    // and add it back later as pid filter
+    let mut add_init_filter = false;
+    if !query.services.is_empty() && query.services[0] == INIT_UNIT {
+        query.services.remove(0);
+        add_init_filter = true;
+    }
 
     let mut qb = QueryBuilder::default();
     let q = qb
@@ -89,11 +97,19 @@ async fn get_logs(
         .with_transports(query.transports)
         .with_boot_ids(query.boot_ids);
 
+    // Add back filter for systemd service as pid=1
+    if add_init_filter {
+        q.with_pid(1);
+    }
+
     let date_from = DateTime::parse_from_rfc3339(&query.datetime_from).ok();
     let date_to = DateTime::parse_from_rfc3339(&query.datetime_to).ok();
 
     if let Some(x) = date_from {
         q.with_date_not_more_recent_than(x.timestamp_micros() as u64);
+    } else {
+        let datetime_to = Utc::now() - Duration::days(1);
+        q.with_date_not_more_recent_than(datetime_to.timestamp_micros() as u64);
     }
 
     if let Some(x) = date_to {
@@ -143,12 +159,14 @@ async fn get_summary(query: SummaryQuery) -> Result<JournalEntries, JournalError
     )
     .unwrap();
 
-    let datetime_to = Utc::now() - Duration::days(1);
+    let datetime_to = Utc::now() - Duration::days(5);
+    let datetime_from = Utc::now() + Duration::days(1);
     let mut qb = QueryBuilder::default();
     let q = qb
         .with_fields(vec!["__REALTIME".into()])
         .with_limit(10_000)
         .with_date_not_older_than(datetime_to.timestamp_micros() as u64)
+        .with_date_not_more_recent_than(datetime_from.timestamp_micros() as u64)
         .with_priority_above_or_equal_to(query.priority)
         .build();
 

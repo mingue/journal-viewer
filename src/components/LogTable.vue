@@ -6,6 +6,7 @@ import { formatEpoch } from "@/common/DateFormatter";
 
 const props = defineProps<{
   logs: JournalEntries;
+  theme: String;
 }>();
 
 const emit = defineEmits<{
@@ -13,7 +14,6 @@ const emit = defineEmits<{
 }>();
 
 let vm = reactive({
-  tableTheme: "",
   expandedRowTimestamp: "",
   expandedEntry: null as JournalEntry | null,
 });
@@ -37,9 +37,9 @@ const columnViewOptions = [
   },
   {
     name: "Timestamp",
-    formatFn: formatEpoch,
+    formatFn: (d) => formatEpoch(parseInt(d) / 1000, true),
     visible: true,
-    style: { width: "8rem" },
+    style: { width: "10rem" },
   },
   {
     name: "Process",
@@ -72,12 +72,6 @@ columnViewOptions.forEach((c, i) => {
 });
 
 onMounted(() => {
-  const match = window.matchMedia("(prefers-color-scheme: dark)");
-
-  if (match) {
-    vm.tableTheme = "table-dark";
-  }
-
   window.addEventListener("scroll", handleScroll);
 });
 
@@ -118,7 +112,8 @@ function toggleFullRecord(timestamp: string) {
 <template>
   <!-- Log table -->
   <div class="container-fluid" ref="scrollComponent">
-    <table class="table table-striped table-hover table-borderless table-sm" :class="vm.tableTheme">
+    <table class="table table-striped table-hover table-borderless table-sm"
+      :class="theme == 'dark' ? 'table-dark' : ''">
       <thead>
         <th v-for="c in columnViewOptions.filter((x) => x.visible)" :style="c.style">
           {{ c.name }}

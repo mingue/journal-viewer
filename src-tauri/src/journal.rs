@@ -24,6 +24,8 @@ bitflags! {
     }
 }
 
+pub const INIT_UNIT: &str = "Init (Systemd)";
+
 #[derive(Debug)]
 pub struct Journal {
     ptr: *mut c_void,
@@ -91,6 +93,10 @@ impl Journal {
             if let Ok(updated_timestamp) = self.get_field(journal_fields::SOURCE_REALTIME_TIMESTAMP)
             {
                 last_timestamp = updated_timestamp.parse().unwrap();
+                trace!(
+                    "Last timestamp {:?}",
+                    chrono::DateTime::from_timestamp_micros(last_timestamp.try_into().unwrap())
+                )
             }
 
             if !q.quick_search.is_empty() {
@@ -169,7 +175,7 @@ impl Journal {
                 }
                 Err(err) => match err {
                     JournalError::EndOfFile => break, // If we reach the end just ignore
-                    _ => return Err(err),          // Other type of error, return it
+                    _ => return Err(err),             // Other type of error, return it
                 },
             }
         }
@@ -213,7 +219,7 @@ impl Journal {
     fn apply_units(&self, q: &Query) {
         if !q.units.is_empty() {
             for unit in q.units.iter() {
-                let query = format!("{}={}", journal_fields::SYSTEMD_UNIT, unit);
+                let query = format!("{}={}", journal_fields::UNIT_FILTER, unit);
                 if let Err(e) = sd_journal_add_match(self.ptr, query) {
                     warn!("Could not apply filter {}", e);
                 }
@@ -252,7 +258,17 @@ impl Journal {
 
         let stdout = String::from_utf8(output.stdout).unwrap();
 
-        serde_json::from_str(&stdout).unwrap()
+        let mut units: Vec<Unit> = serde_json::from_str(&stdout).unwrap();
+        units.insert(
+            0,
+            Unit {
+                unit_file: INIT_UNIT.into(),
+                state: "".into(),
+                preset: Option::None,
+            },
+        );
+
+        units
     }
 
     pub fn list_boots() -> Vec<Boot> {

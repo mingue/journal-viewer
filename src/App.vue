@@ -95,6 +95,10 @@ function quickSearch(search: string) {
   getLogs();
 }
 
+function toggleTheme() {
+  vm.theme == "dark" ? vm.theme = "" : vm.theme = "dark"
+}
+
 function filter(filter: Filter) {
   vm.priority = filter.priority;
   vm.services = filter.services;
@@ -120,13 +124,13 @@ onMounted(() => {
 <template>
   <header></header>
   <main :class="vm.theme">
-    <SummaryBar />
+    <SummaryBar @toggle-theme="toggleTheme" />
     <SearchBar @quick-search="quickSearch" />
     <!-- Main Content -->
     <div class="d-flex">
       <FilterSidebar :theme="vm.theme" :priority="vm.priority" :transports="vm.transports" @filter="filter" />
       <div class="flex-fill">
-        <LogTable :logs="vm.logs" @load-more="loadNextLogs" />
+        <LogTable :logs="vm.logs" :theme="vm.theme" @load-more="loadNextLogs" />
       </div>
     </div>
   </main>

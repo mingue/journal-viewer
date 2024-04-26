@@ -30,6 +30,8 @@ pub const SYSTEMD_UNIT: &str = "_SYSTEMD_UNIT";
 /// The control group path in the systemd hierarchy
 pub const SYSTEMD_CGROUP: &str = "_SYSTEMD_CGROUP";
 
+/// unit is used for filtering
+pub const UNIT_FILTER: &str = "UNIT";
 /// The kernel boot ID
 pub const BOOT_ID: &str = "_BOOT_ID";
 

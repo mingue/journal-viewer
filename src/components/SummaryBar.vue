@@ -4,10 +4,16 @@ import { invoke } from "@tauri-apps/api";
 import type { JournalEntries } from "@/model/JournalEntries";
 import { formatEpoch } from "@/common/DateFormatter";
 
+const emit = defineEmits<{
+  (e: "toggle-theme"): void;
+}>();
+
+const MAX_PERIOD_DAYS = 5;
 const BLOCK_TIME_DURATION_SECONDS = 900;
 
 let vm = reactive({
   logSummaryEntries: {} as Record<string, number>,
+  isDarkThemeOn: true,
 });
 
 let summaryQuery = {
@@ -33,8 +39,15 @@ invoke<JournalEntries>("get_summary", {
   // Fill empty blocks with 0 value as there might be no log entries for a block of time
   let keysStr = Object.keys(itemsPerBlock);
   let keys = keysStr.map((x) => parseInt(x));
+  let itCount = 0;
 
-  for (let index = keys[0]; index < keys[keys.length - 2]; index++) {
+  for (let index = keys[0]; index <= keys[keys.length - 2]; index++) {
+    itCount++;
+
+    // Don't fill more than x days of blanks in case there is something weird with the data coming from systemd
+    // Like records in 2078 for some reason recorded on my system to avoid memory leaks
+    if (itCount > MAX_PERIOD_DAYS * 24 * (BLOCK_TIME_DURATION_SECONDS / 60)) break;
+
     if (!keys.includes(index)) {
       itemsPerBlock[`${index}`] = 0;
     }
@@ -86,9 +99,24 @@ const getXLegendDate = (x: string, index: number) => {
     return x;
   }
 };
+
+function toggleTheme() {
+  vm.isDarkThemeOn = !vm.isDarkThemeOn;
+  emit("toggle-theme");
+}
 </script>
 
 <template>
+  <h4 class="float-start">Latest entries</h4>
+  <div style="padding-top: 6px" class="d-inline-block">
+    <i class="bi bi-info-circle-fill d-inline-block"
+      title="Summary of log entries from the last 5 days up to 10k entries"></i>
+  </div>
+  <div style="padding-top: 6px; padding-right: 20px; cursor: pointer" class="float-end d-inline-block"
+    @click="toggleTheme">
+    <i class="bi bi-lightbulb d-inline-block" title="Toggle theme" v-if="vm.isDarkThemeOn"></i>
+    <i class="bi bi-lightbulb-fill d-inline-block" title="Toggle theme" v-if="!vm.isDarkThemeOn"></i>
+  </div>
   <!-- Summary bar -->
   <div class="d-flex container-fluid summary-bar justify-content-end">
     <div class="summary-y-legend d-flex flex-column">
@@ -101,11 +129,8 @@ const getXLegendDate = (x: string, index: number) => {
       </div>
       <div class="flex-fill y-legend">&nbsp;</div>
     </div>
-    <div
-      class="flex-fill summary-cell"
-      v-for="(v, k, index) in vm.logSummaryEntries"
-      :title="`Date: ${formatEpoch(k)}, Value: ${v}`"
-    >
+    <div class="flex-fill summary-cell" v-for="(v, k, index) in vm.logSummaryEntries"
+      :title="`Date: ${formatEpoch(k)}, Value: ${v}`">
       <div class="summary-value" :style="{ height: (v / maxSummaryValue) * 100 + '%' }">&nbsp;</div>
 
       <div class="summary-x-legend" :class="{ 'd-none': index % 10 != 0 }">
@@ -123,6 +148,24 @@ const getXLegendDate = (x: string, index: number) => {
   background-color: #eee;
   position: relative;
   width: 98%;
+}
+
+h4 {
+  padding-top: 4px;
+  padding-left: 16px;
+  padding-right: 10px;
+}
+
+main.dark h4 {
+  color: #eee;
+}
+
+main .bi {
+  padding-top: 4px;
+}
+
+main.dark .bi {
+  color: #eee;
 }
 
 main.dark .summary-bar {
