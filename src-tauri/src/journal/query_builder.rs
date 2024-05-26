@@ -1,6 +1,6 @@
 use std::mem;
 
-use crate::{journal_fields, query::Query};
+use super::{journal_fields, query::Query};
 
 pub struct QueryBuilder {
     query: Query,
@@ -19,7 +19,7 @@ impl QueryBuilder {
             transports: vec!["syslog".into(), "journal".into(), "stdout".into()],
             date_less_than: 0,
             date_more_than: 0,
-            quick_search: "".into(),
+            quick_search: String::new(),
             reset_position: true,
         };
 

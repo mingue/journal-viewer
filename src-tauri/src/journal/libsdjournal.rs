@@ -1,4 +1,4 @@
-use crate::libsdjournal_bindings;
+use super::libsdjournal_bindings;
 use libc::{c_char, c_void, size_t};
 use serde::Serialize;
 use std::ffi::{CStr, CString};

@@ -4,29 +4,24 @@
     windows_subsystem = "windows"
 )]
 
-mod boot;
 mod journal;
-mod journal_entries;
-mod journal_fields;
-mod libsdjournal;
-mod libsdjournal_bindings;
-mod query;
-mod query_builder;
-mod unit;
+mod monitor;
 
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate lazy_static;
 
-use crate::{journal::INIT_UNIT, query_builder::QueryBuilder};
-use boot::Boot;
 use chrono::{DateTime, Duration, Utc};
 use env_logger::Env;
+use journal::Boot;
+use journal::JournalError;
+use journal::Unit;
 use journal::{Journal, OpenFlags};
-use journal_entries::{JournalEntries, JournalEntry};
-use libsdjournal::JournalError;
+use journal::{JournalEntries, JournalEntry};
+use journal::{QueryBuilder, INIT_UNIT};
 use serde::Deserialize;
 use tauri::async_runtime::Mutex;
-use unit::Unit;
 
 fn main() {
     let env = Env::default()
