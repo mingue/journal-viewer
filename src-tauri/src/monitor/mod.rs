@@ -1,9 +1,9 @@
 mod cmdline;
+mod pid_stat;
 mod smaps_rollup;
 mod stat;
-// mod meminfo
-// mod cpuinfo
 mod uptime;
+// mod meminfo
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
@@ -30,6 +30,9 @@ pub struct ProcessStatus {
 #[derive(Default, Debug)]
 pub struct SystemStatus {
     pub uptime_seconds: f32,
+    user_mode_clicks: usize,
+    kernel_mode_clicks: usize,
+    idle_time_clicks: usize,
 }
 
 lazy_static! {
@@ -128,7 +131,7 @@ impl Monitor {
         };
 
         cmdline::read_file(self.procs_path, pid, &mut pe)?;
-        stat::read_file(self.procs_path, pid, &mut pe)?;
+        pid_stat::read_file(self.procs_path, pid, &mut pe)?;
         smaps_rollup::read_file(self.procs_path, pid, &mut pe)?;
 
         Ok(pe)

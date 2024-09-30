@@ -33,7 +33,7 @@
   - [x] Store Process in Hashmap
 
 - System
-  - [ ] Get CPU Usage from /proc/cpuinfo, time spend on different kinds of work on clicks
+  - [ ] Get CPU Usage from /proc/stat, time spend on different kinds of work on clicks
       1st user: normal processes executing in user mode
       3rd system: processes executing in kernel mode
       4th idle

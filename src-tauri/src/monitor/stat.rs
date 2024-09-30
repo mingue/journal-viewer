@@ -1,39 +1,81 @@
-use super::ProcessStatus;
+use nom::{
+    bytes::complete::*,
+    character::{complete::*, is_alphanumeric},
+    Err, Needed,
+};
 
-pub fn read_file(
-    procs_path: &str,
-    pid: &usize,
-    process_entry: &mut ProcessStatus,
-) -> anyhow::Result<()> {
-    let stat = std::fs::read_to_string(format!("{procs_path}/{pid}/stat"))?;
-    let fields: Vec<&str> = stat.split(' ').collect();
+use super::{ProcessStatus, SystemStatus};
 
-    // Get process name and remove parentesis
-    process_entry.process_name = fields[1][1..fields[1].len() - 1].to_owned();
-    // Get userspace time in clicks
-    // Get kernel/system time in clicks
-    process_entry.time_userspace_clicks = fields[13].parse::<usize>()?;
-    process_entry.time_kernel_clicks = fields[14].parse::<usize>()?;
-    process_entry.start_time = fields[21].parse::<usize>()?;
-    process_entry.scrapped_timestamp = chrono::Utc::now();
+pub fn read_file(procs_path: &str, system_status: &mut SystemStatus) -> anyhow::Result<()> {
+    let stat = std::fs::read_to_string(format!("{procs_path}/stat"))?;
+    let lines = stat.lines();
+
+    let lines: Vec<String> = lines.map(|l| l.to_string()).collect();
+
+    let fields: Vec<StatLine> = lines
+        .iter()
+        .filter(|l| l.starts_with("cpu"))
+        .map(|l| parse_line(l))
+        .filter_map(|r| r.ok())
+        .map(|r| r.1)
+        .collect();
+
+    system_status.idle_time_clicks = fields[0].idle_time_clicks;
+    system_status.kernel_mode_clicks = fields[0].kernel_mode_clicks;
+    system_status.user_mode_clicks = fields[0].user_mode_clicks;
+    // TODO: Add per cpu usage
+
     Ok(())
+}
+
+fn parse_line(l: &str) -> nom::IResult<&str, StatLine> {
+    let (r, _) = tag("cpu")(l)?;
+    let (r, core_nr) = take_until(" ")(r)?;
+    let core_nr = core_nr
+        .parse::<usize>()
+        .map_err(|_e| nom::Err::Incomplete(Needed::Unknown))?;
+    let (r, _) = take_while(|c| c == ' ')(r)?;
+    let fields: Vec<&str> = r.split(' ').collect();
+    let normal = fields[0]
+        .parse::<usize>()
+        .map_err(|_e| nom::Err::Incomplete(Needed::Unknown))?;
+    let kernel = fields[2]
+        .parse::<usize>()
+        .map_err(|_e| nom::Err::Incomplete(Needed::Unknown))?;
+    let idle = fields[3]
+        .parse::<usize>()
+        .map_err(|_e| nom::Err::Incomplete(Needed::Unknown))?;
+
+    Ok((
+        l,
+        StatLine {
+            core_nr,
+            user_mode_clicks: normal,
+            kernel_mode_clicks: kernel,
+            idle_time_clicks: idle,
+        },
+    ))
+}
+
+struct StatLine {
+    core_nr: usize,
+    user_mode_clicks: usize,
+    kernel_mode_clicks: usize,
+    idle_time_clicks: usize,
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::monitor::{stat, ProcessStatus};
+    use crate::monitor::{smaps_rollup, ProcessStatus};
     use anyhow::Result;
 
     #[test]
     fn read_file() -> Result<()> {
-        let mut pe = ProcessStatus::default();
-        stat::read_file("./tests/fixtures", &1, &mut pe)?;
-
-        assert_eq!(pe.process_name, "systemd");
-        assert_eq!(pe.time_userspace_clicks, 7278);
-        assert_eq!(pe.time_kernel_clicks, 4048);
-        assert_eq!(pe.start_time, 12);
-
+        let mut pe: ProcessStatus = ProcessStatus::default();
+        smaps_rollup::read_file("./tests/fixtures", &1, &mut pe)?;
+        assert_eq!(pe.pss_in_kb, 50469);
+        assert_eq!(pe.rss_in_kb, 86828);
+        assert_eq!(pe.uss_in_kb, 50469 - 7056);
         Ok(())
     }
 }
