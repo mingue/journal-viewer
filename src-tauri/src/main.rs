@@ -12,6 +12,8 @@ extern crate log;
 #[macro_use]
 extern crate lazy_static;
 
+use std::collections::HashMap;
+
 use chrono::{DateTime, Duration, Utc};
 use env_logger::Env;
 use journal::Boot;
@@ -20,6 +22,9 @@ use journal::Unit;
 use journal::{Journal, OpenFlags};
 use journal::{JournalEntries, JournalEntry};
 use journal::{QueryBuilder, INIT_UNIT};
+use monitor::Monitor;
+use monitor::ProcessStatus;
+use monitor::SystemStatus;
 use serde::Deserialize;
 use tauri::async_runtime::Mutex;
 
@@ -37,15 +42,19 @@ fn main() {
     )
     .unwrap();
 
+    let m = Monitor::new();
+
     info!("Starting journal logger");
     tauri::Builder::default()
         .manage(Mutex::new(j))
+        .manage(Mutex::new(m))
         .invoke_handler(tauri::generate_handler![
             get_logs,
             get_summary,
             get_services,
             get_full_entry,
             get_boots,
+            get_system_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -187,4 +196,28 @@ async fn get_boots() -> Result<Vec<Boot>, JournalError> {
     debug!("found {} boots", boots.len());
 
     Ok(boots)
+}
+
+#[tauri::command]
+async fn get_system_status(
+    monitor: tauri::State<'_, Mutex<Monitor>>,
+) -> Result<SystemStatus, JournalError> {
+    let m = monitor.lock().await;
+
+    match m.get_system_status() {
+        Ok(ss) => Ok(ss),
+        Err(_) => Err(JournalError::Internal(1)),
+    }
+}
+
+#[tauri::command]
+async fn get_processes(
+    monitor: tauri::State<'_, Mutex<Monitor>>,
+) -> Result<HashMap<usize, ProcessStatus>, JournalError> {
+    let mut m = monitor.lock().await;
+
+    match m.get_processes() {
+        Some(p) => Ok(p.clone()),
+        None => Err(JournalError::Internal(1)),
+    }
 }

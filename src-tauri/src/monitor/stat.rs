@@ -1,10 +1,8 @@
 use nom::{
-    bytes::complete::*,
-    character::{complete::*, is_alphanumeric},
-    Err, Needed,
+    Needed, bytes::complete::*,
 };
 
-use super::{ProcessStatus, SystemStatus};
+use super::SystemStatus;
 
 pub fn read_file(procs_path: &str, system_status: &mut SystemStatus) -> anyhow::Result<()> {
     let stat = std::fs::read_to_string(format!("{procs_path}/stat"))?;

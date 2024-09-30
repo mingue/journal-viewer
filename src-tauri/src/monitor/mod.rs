@@ -4,36 +4,14 @@ mod smaps_rollup;
 mod stat;
 mod uptime;
 // mod meminfo
+mod process_status;
+mod system_status;
 
 use anyhow::Result;
-use chrono::{DateTime, Utc};
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::{collections::HashMap, fs::read_dir, process::Command};
-
-#[derive(Default, Debug)]
-pub struct ProcessStatus {
-    pub pid: usize,
-    pub cmd: String,
-    pub process_name: String,
-    pub pss_in_kb: usize,
-    pub rss_in_kb: usize,
-    pub uss_in_kb: usize, // Pss - Pss_Shmem
-    time_userspace_clicks: usize,
-    time_kernel_clicks: usize,
-    pub time_userspace_miliseconds: f32,
-    pub time_kernel_miliseconds: f32,
-    pub start_time: usize,
-    pub cpu_usage_percentage: f32,
-    scrapped_timestamp: DateTime<Utc>,
-}
-
-#[derive(Default, Debug)]
-pub struct SystemStatus {
-    pub uptime_seconds: f32,
-    user_mode_clicks: usize,
-    kernel_mode_clicks: usize,
-    idle_time_clicks: usize,
-}
+pub use process_status::ProcessStatus;
+pub use system_status::SystemStatus;
 
 lazy_static! {
     static ref CLICKS: usize = get_clicks();
@@ -54,7 +32,14 @@ pub struct Monitor {
 }
 
 impl Monitor {
-    fn get_system_status(&self) -> Result<SystemStatus> {
+    pub fn new() -> Monitor {
+        Monitor {
+            procs_path: "/proc",
+            last_processes: None,
+        }
+    }
+
+    pub fn get_system_status(&self) -> Result<SystemStatus> {
         let mut ss = SystemStatus::default();
 
         uptime::read_file(self.procs_path, &mut ss)?;
@@ -72,7 +57,7 @@ impl Monitor {
         Ok(pids)
     }
 
-    fn get_processes(&mut self) -> Option<&HashMap<usize, ProcessStatus>> {
+    pub fn get_processes(&mut self) -> Option<&HashMap<usize, ProcessStatus>> {
         let pids = self.get_running_pids().ok()?;
 
         let mut process_entries: HashMap<usize, ProcessStatus> = pids

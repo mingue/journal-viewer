@@ -66,6 +66,34 @@ function getLogs(event?: Event) {
     });
 }
 
+function getSystemStatus(event?: Event) {
+  if (event != null) {
+    event.preventDefault();
+  }
+
+  invoke("get_system_status", {
+    query: journalQuery,
+  })
+    .then((response) => {
+      console.log("SystemStatus");
+      console.log(JSON.stringify(response));
+    })
+    .catch(() => {
+      console.error("SystemStatus error");
+    });
+
+  invoke("get_processes", {
+    query: journalQuery,
+  })
+    .then((response) => {
+      console.log("Processes");
+      console.log(JSON.stringify(response));
+    })
+    .catch(() => {
+      console.error("Processes error");
+    });
+}
+
 function loadNextLogs() {
   if (loadingLogs) {
     return;
@@ -118,6 +146,7 @@ onMounted(() => {
   }
 
   getLogs();
+  getSystemStatus();
 });
 </script>
 
