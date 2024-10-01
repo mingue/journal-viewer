@@ -71,9 +71,7 @@ function getSystemStatus(event?: Event) {
     event.preventDefault();
   }
 
-  invoke("get_system_status", {
-    query: journalQuery,
-  })
+  invoke("get_system_status")
     .then((response) => {
       console.log("SystemStatus");
       console.log(JSON.stringify(response));
@@ -82,9 +80,7 @@ function getSystemStatus(event?: Event) {
       console.error("SystemStatus error");
     });
 
-  invoke("get_processes", {
-    query: journalQuery,
-  })
+  invoke("get_processes")
     .then((response) => {
       console.log("Processes");
       console.log(JSON.stringify(response));

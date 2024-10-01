@@ -8,9 +8,9 @@ mod process_status;
 mod system_status;
 
 use anyhow::Result;
+pub use process_status::ProcessStatus;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use std::{collections::HashMap, fs::read_dir, process::Command};
-pub use process_status::ProcessStatus;
 pub use system_status::SystemStatus;
 
 lazy_static! {
@@ -58,7 +58,10 @@ impl Monitor {
     }
 
     pub fn get_processes(&mut self) -> Option<&HashMap<usize, ProcessStatus>> {
+        debug!("processes started");
+
         let pids = self.get_running_pids().ok()?;
+        debug!("processes found {} pids", pids.len());
 
         let mut process_entries: HashMap<usize, ProcessStatus> = pids
             .into_par_iter()
@@ -71,6 +74,7 @@ impl Monitor {
                 None
             })
             .collect();
+        debug!("processes found {} process entries", process_entries.len());
 
         process_entries.iter_mut().for_each(|(k, v)| {
             v.time_userspace_miliseconds =
@@ -96,7 +100,7 @@ impl Monitor {
             }
         });
 
-        debug!("{:?}", &process_entries);
+        trace!("processes {:?}", &process_entries);
 
         // Not supported by borrow checker, so have to use get_or_insert to trick it
         // Ok(&self.last_processes.unwrap())
@@ -104,8 +108,14 @@ impl Monitor {
         self.last_processes = Some(process_entries);
 
         match &self.last_processes {
-            Some(lp) => Some(lp),
-            None => None,
+            Some(lp) => {
+                debug!("processes {:?}", lp.len());
+                Some(lp)
+            }
+            None => {
+                debug!("processes none found");
+                None
+            }
         }
     }
 

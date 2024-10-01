@@ -55,6 +55,7 @@ fn main() {
             get_full_entry,
             get_boots,
             get_system_status,
+            get_processes
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -202,11 +203,18 @@ async fn get_boots() -> Result<Vec<Boot>, JournalError> {
 async fn get_system_status(
     monitor: tauri::State<'_, Mutex<Monitor>>,
 ) -> Result<SystemStatus, JournalError> {
+    debug!("Getting system status...");
     let m = monitor.lock().await;
 
     match m.get_system_status() {
-        Ok(ss) => Ok(ss),
-        Err(_) => Err(JournalError::Internal(1)),
+        Ok(ss) => {
+            debug!("Got system status...");
+            Ok(ss)
+        }
+        Err(e) => {
+            error!("{:?}", e);
+            Err(JournalError::Internal(1))
+        }
     }
 }
 
@@ -214,10 +222,17 @@ async fn get_system_status(
 async fn get_processes(
     monitor: tauri::State<'_, Mutex<Monitor>>,
 ) -> Result<HashMap<usize, ProcessStatus>, JournalError> {
+    debug!("Getting processes...");
     let mut m = monitor.lock().await;
 
     match m.get_processes() {
-        Some(p) => Ok(p.clone()),
-        None => Err(JournalError::Internal(1)),
+        Some(p) => {
+            debug!("Got {} processes", p.len());
+            Ok(p.clone())
+        }
+        None => {
+            debug!("No processes");
+            Err(JournalError::Internal(1))
+        }
     }
 }
