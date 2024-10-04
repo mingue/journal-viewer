@@ -4,16 +4,11 @@ import { invoke } from "@tauri-apps/api";
 import type { JournalEntries } from "@/model/JournalEntries";
 import { formatEpoch } from "@/common/DateFormatter";
 
-const emit = defineEmits<{
-  (e: "toggle-theme"): void;
-}>();
-
 const MAX_PERIOD_DAYS = 5;
 const BLOCK_TIME_DURATION_SECONDS = 900;
 
 let vm = reactive({
   logSummaryEntries: {} as Record<string, number>,
-  isDarkThemeOn: true,
 });
 
 let summaryQuery = {
@@ -99,11 +94,6 @@ const getXLegendDate = (x: string, index: number) => {
     return x;
   }
 };
-
-function toggleTheme() {
-  vm.isDarkThemeOn = !vm.isDarkThemeOn;
-  emit("toggle-theme");
-}
 </script>
 
 <template>
@@ -111,11 +101,6 @@ function toggleTheme() {
   <div style="padding-top: 6px" class="d-inline-block">
     <i class="bi bi-info-circle-fill d-inline-block"
       title="Summary of log entries from the last 5 days up to 10k entries"></i>
-  </div>
-  <div style="padding-top: 6px; padding-right: 20px; cursor: pointer" class="float-end d-inline-block"
-    @click="toggleTheme">
-    <i class="bi bi-lightbulb d-inline-block" title="Toggle theme" v-if="vm.isDarkThemeOn"></i>
-    <i class="bi bi-lightbulb-fill d-inline-block" title="Toggle theme" v-if="!vm.isDarkThemeOn"></i>
   </div>
   <!-- Summary bar -->
   <div class="d-flex container-fluid summary-bar justify-content-end">
@@ -143,28 +128,16 @@ function toggleTheme() {
 <style scoped>
 .summary-bar {
   height: 100px;
-  margin: 1rem;
   margin-bottom: 4rem;
   background-color: #eee;
   position: relative;
-  width: 98%;
 }
 
 h4 {
   padding-top: 4px;
-  padding-left: 16px;
-  padding-right: 10px;
 }
 
 main.dark h4 {
-  color: #eee;
-}
-
-main .bi {
-  padding-top: 4px;
-}
-
-main.dark .bi {
   color: #eee;
 }
 

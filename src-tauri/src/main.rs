@@ -13,6 +13,7 @@ extern crate log;
 extern crate lazy_static;
 
 use std::collections::HashMap;
+use std::os::unix::process;
 
 use chrono::{DateTime, Duration, Utc};
 use env_logger::Env;
@@ -221,14 +222,16 @@ async fn get_system_status(
 #[tauri::command]
 async fn get_processes(
     monitor: tauri::State<'_, Mutex<Monitor>>,
-) -> Result<HashMap<usize, ProcessStatus>, JournalError> {
+) -> Result<Vec<ProcessStatus>, JournalError> {
     debug!("Getting processes...");
     let mut m = monitor.lock().await;
 
     match m.get_processes() {
         Some(p) => {
             debug!("Got {} processes", p.len());
-            Ok(p.clone())
+            let mut processes: Vec<ProcessStatus> = p.clone().into_iter().map(|(_, v)| v).collect();
+            processes.sort_by(|a, b| b.cpu_usage_percentage.total_cmp(&a.cpu_usage_percentage));
+            Ok(processes[..30].to_vec())
         }
         None => {
             debug!("No processes");
