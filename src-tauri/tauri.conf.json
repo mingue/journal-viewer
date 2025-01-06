@@ -21,7 +21,8 @@
       "deb": {
         "depends": [
           "systemd",
-          "libwebkit2gtk-4.1-0"
+          "libwebkit2gtk-4.1-0",
+          "libsoup2.4-1"
         ]
       },
       "externalBin": [],
