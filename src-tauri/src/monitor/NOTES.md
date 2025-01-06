@@ -8,6 +8,7 @@
 - [x] Pid /proc/PID/stat 1st field (obtained from folder name)
 - [x] process name /proc/PID/stat 2nd field
 - [x] cmdline /proc/PID/cmdline
+- [x] read count of fd open
 
 - [x] Use Pss, Uss, Rss https://github.com/kwkroeger/smem/blob/master/smem for more details
 

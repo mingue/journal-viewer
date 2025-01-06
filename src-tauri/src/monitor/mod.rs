@@ -4,6 +4,7 @@ mod smaps_rollup;
 mod stat;
 mod uptime;
 // mod meminfo
+mod fd;
 mod process_status;
 mod system_status;
 
@@ -48,7 +49,14 @@ impl Monitor {
 
     fn get_running_pids(&self) -> Result<Vec<usize>> {
         let pids: Vec<usize> = read_dir(self.procs_path)?
-            .filter_map(|d| d.ok())
+            .filter_map(|d| {
+                if let Err(e) = d {
+                    debug!("couldn't read pid info {}", e);
+                    None
+                } else {
+                    d.ok()
+                }
+            })
             .filter(|d| d.file_type().unwrap().is_dir())
             .filter_map(|d| d.file_name().into_string().ok())
             .filter_map(|d| d.parse::<usize>().ok())
@@ -67,11 +75,13 @@ impl Monitor {
             .into_par_iter()
             .filter_map(|pid| {
                 let pe = self.create_process_entry(&pid);
-                if let Ok(pe) = pe {
-                    return Some((pid, pe));
+                match pe {
+                    Ok(pe) => Some((pid, pe)),
+                    Err(e) => {
+                        debug!("couldn't get process info {} ", e);
+                        None
+                    }
                 }
-
-                None
             })
             .collect();
         debug!("processes found {} process entries", process_entries.len());
@@ -128,6 +138,7 @@ impl Monitor {
         cmdline::read_file(self.procs_path, pid, &mut pe)?;
         pid_stat::read_file(self.procs_path, pid, &mut pe)?;
         smaps_rollup::read_file(self.procs_path, pid, &mut pe)?;
+        fd::read_file(self.procs_path, pid, &mut pe)?;
 
         Ok(pe)
     }

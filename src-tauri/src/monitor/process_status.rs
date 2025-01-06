@@ -16,4 +16,5 @@ pub struct ProcessStatus {
     pub start_time: usize,
     pub cpu_usage_percentage: f32,
     pub(super) scrapped_timestamp: DateTime<Utc>,
+    pub fds: u64,
 }

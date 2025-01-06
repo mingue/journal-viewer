@@ -92,6 +92,13 @@ const columnViewOptions = [
     style: {},
     field: "cpu_usage_percentage",
   },
+  {
+    name: "File Descriptors%",
+    formatFn: null,
+    visible: true,
+    style: {},
+    field: "fds",
+  },
 ] as ColumnViewOptions[];
 
 columnViewOptions.forEach((c, i) => {

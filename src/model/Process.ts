@@ -9,4 +9,5 @@ export type Process = {
   time_kernel_miliseconds: number;
   start_time: number;
   cpu_usage_percentage: number;
+  fds: number;
 };
