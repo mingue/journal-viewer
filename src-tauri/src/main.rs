@@ -12,17 +12,14 @@ extern crate log;
 #[macro_use]
 extern crate lazy_static;
 
-use std::collections::HashMap;
-use std::os::unix::process;
-
 use chrono::{DateTime, Duration, Utc};
 use env_logger::Env;
 use journal::Boot;
 use journal::JournalError;
 use journal::Unit;
+use journal::{INIT_UNIT, QueryBuilder};
 use journal::{Journal, OpenFlags};
 use journal::{JournalEntries, JournalEntry};
-use journal::{QueryBuilder, INIT_UNIT};
 use monitor::Monitor;
 use monitor::ProcessStatus;
 use monitor::SystemStatus;
@@ -229,7 +226,7 @@ async fn get_processes(
     match m.get_processes() {
         Some(p) => {
             debug!("Got {} processes", p.len());
-            let mut processes: Vec<ProcessStatus> = p.clone().into_iter().map(|(_, v)| v).collect();
+            let mut processes: Vec<ProcessStatus> = p.clone().into_values().collect();
             processes.sort_by(|a, b| b.cpu_usage_percentage.total_cmp(&a.cpu_usage_percentage));
             Ok(processes[..30].to_vec())
         }

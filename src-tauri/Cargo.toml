@@ -2,7 +2,7 @@
 authors = ["Victor Mingueza"]
 default-run = "journal-viewer"
 description = "A modern desktop log viewer for systemd journal"
-edition = "2021"
+edition = "2024"
 license = "GPL 3.0"
 name = "journal-viewer"
 repository = "https://github.com/mingue/journal-viewer"

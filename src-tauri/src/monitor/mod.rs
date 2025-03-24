@@ -50,12 +50,12 @@ impl Monitor {
     fn get_running_pids(&self) -> Result<Vec<usize>> {
         let pids: Vec<usize> = read_dir(self.procs_path)?
             .filter_map(|d| {
-                if let Err(e) = d {
+                match d { Err(e) => {
                     debug!("couldn't read pid info {}", e);
                     None
-                } else {
+                } _ => {
                     d.ok()
-                }
+                }}
             })
             .filter(|d| d.file_type().unwrap().is_dir())
             .filter_map(|d| d.file_name().into_string().ok())
