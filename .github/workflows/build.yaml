@@ -17,8 +17,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential curl wget libssl-dev \
-            libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libsoup3.0-dev \
-            libjavascriptcoregtk-4.0-dev libwebkit2gtk-4.1-dev libwebkit2gtk-4.0-dev
+            libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
       - name: build
         run: ./.github/scripts/build-dev.sh
         shell: bash
