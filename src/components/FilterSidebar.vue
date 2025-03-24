@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Filter } from "@/model/Filter";
 import type { Unit } from "@/model/Unit";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { onMounted, reactive } from "vue";
 import Multiselect from "@vueform/multiselect";
 import VueDatePicker from "@vuepic/vue-datepicker";
