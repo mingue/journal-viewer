@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref } from "vue";
 import type { JournalEntries, JournalEntry } from "@/model/JournalEntries";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import { formatEpoch } from "@/common/DateFormatter";
 
 const props = defineProps<{
