@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, onMounted, onUnmounted } from "vue";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import ProcessTable from "@/components/ProcessTable.vue";
 import type { Process } from "@/model/Process";
 

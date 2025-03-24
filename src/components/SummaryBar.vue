@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive } from "vue";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 import type { JournalEntries } from "@/model/JournalEntries";
 import { formatEpoch } from "@/common/DateFormatter";
 
