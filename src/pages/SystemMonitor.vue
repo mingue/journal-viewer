@@ -39,7 +39,7 @@ function getSystemStatus(event?: Event) {
 
 onMounted(() => {
   getSystemStatus();
-  procRefresh = setInterval(getSystemStatus, 3000);
+  procRefresh = setInterval(getSystemStatus, 5000);
 });
 
 onUnmounted(() => {
