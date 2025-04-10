@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import type { Process } from "@/model/Process";
+import type { ProcessQuery } from "@/model/ProcessQuery";
 import { ref, computed } from "vue";
 
 const props = defineProps<{
   processes: Array<Process>;
   theme: String;
+}>();
+
+const emit = defineEmits<{
+  (e: "sorted", q: ProcessQuery): void;
 }>();
 
 type ColumnViewOptions = {
@@ -106,7 +111,7 @@ const columnViewOptions = [
     name: "No. File Desc",
     formatFn: null,
     visible: true,
-    style: { width: "8rem", "text-align": "right", "padding-right": "5px" },
+    style: { width: "10rem", "text-align": "right", "padding-right": "5px" },
     field: "fds",
   },
   {
@@ -138,23 +143,27 @@ columnViewOptions.forEach((c, i) => {
 const sortColumn = ref<string | null>(null);
 const sortOrder = ref<"asc" | "desc">("asc");
 
-const sortedProcesses = computed(() => {
-  if (!sortColumn.value) return props.processes;
+// const sortedProcesses = computed(() => {
+//   if (!sortColumn.value) return props.processes;
 
-  return [...props.processes].sort((a, b) => {
-    const field = sortColumn.value!;
-    const valA = a[field];
-    const valB = b[field];
+//   let sortedProc = [...props.processes].sort((a, b) => {
+//     const field = sortColumn.value!;
+//     const valA = a[field];
+//     const valB = b[field];
 
-    if (valA == null || valB == null) return 0;
+//     if (valA == null || valB == null) return 0;
 
-    if (sortOrder.value === "asc") {
-      return valA > valB ? 1 : valA < valB ? -1 : 0;
-    } else {
-      return valA < valB ? 1 : valA > valB ? -1 : 0;
-    }
-  });
-});
+//     if (sortOrder.value === "asc") {
+//       return valA > valB ? 1 : valA < valB ? -1 : 0;
+//     } else {
+//       return valA < valB ? 1 : valA > valB ? -1 : 0;
+//     }
+//   });
+
+
+
+//   return props.processes;;
+// });
 
 function toggleSort(column: string) {
   if (sortColumn.value === column) {
@@ -163,6 +172,11 @@ function toggleSort(column: string) {
     sortColumn.value = column;
     sortOrder.value = "asc";
   }
+
+  emit("sorted", {
+    sortBy: sortColumn.value.toString(),
+    sortOrder: sortOrder.value.toString()
+  })
 }
 
 const visibleColumnsCount = columnViewOptions.filter((x) => x.visible).length;
@@ -183,7 +197,7 @@ const visibleColumnsCount = columnViewOptions.filter((x) => x.visible).length;
         </th>
       </thead>
       <tbody class="table-group-divider">
-        <template v-for="row in sortedProcesses" :key="row.pid">
+        <template v-for="row in processes" :key="row.pid">
           <tr>
             <td v-for="c in columnViewOptions.filter((x) => x.visible)" :style="c.style">
               <div :title="row[c.field]">
