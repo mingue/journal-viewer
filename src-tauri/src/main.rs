@@ -8,12 +8,11 @@ mod journal;
 mod monitor;
 
 #[macro_use]
-extern crate log;
+extern crate tracing;
 #[macro_use]
 extern crate lazy_static;
 
 use chrono::{DateTime, Duration, Utc};
-use env_logger::Env;
 use journal::Boot;
 use journal::JournalError;
 use journal::Unit;
@@ -25,13 +24,20 @@ use monitor::ProcessStatus;
 use monitor::SystemStatus;
 use serde::Deserialize;
 use tauri::async_runtime::Mutex;
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::fmt;
+use tracing_subscriber::filter::EnvFilter;
 
 fn main() {
-    let env = Env::default()
-        .filter_or("RUST_LOG", "warn")
-        .write_style_or("RUST_LOG_STYLE", "never");
+    let fmt_layer = fmt::layer();
+    let filter_layer = EnvFilter::try_from_default_env()
+        .or_else(|_| EnvFilter::try_new("info"))
+        .unwrap();
 
-    env_logger::init_from_env(env);
+    tracing_subscriber::registry()
+        .with(filter_layer)
+        .with(fmt_layer)
+        .init();
 
     let j = Journal::open(
         OpenFlags::SD_JOURNAL_LOCAL_ONLY
@@ -75,6 +81,7 @@ pub struct JournalQuery {
 }
 
 #[tauri::command]
+#[instrument]
 async fn get_logs(
     mut query: JournalQuery,
     journal: tauri::State<'_, Mutex<Journal>>,
@@ -129,6 +136,7 @@ async fn get_logs(
 }
 
 #[tauri::command]
+#[instrument]
 async fn get_full_entry(timestamp: u64) -> Result<JournalEntry, JournalError> {
     debug!("Getting full entry for timestamp {}...", timestamp);
 
@@ -153,6 +161,7 @@ pub struct SummaryQuery {
 }
 
 #[tauri::command]
+#[instrument]
 async fn get_summary(query: SummaryQuery) -> Result<JournalEntries, JournalError> {
     debug!("Getting summary...");
     let j = Journal::open(
@@ -180,6 +189,7 @@ async fn get_summary(query: SummaryQuery) -> Result<JournalEntries, JournalError
 }
 
 #[tauri::command]
+#[instrument]
 async fn get_services() -> Result<Vec<Unit>, JournalError> {
     debug!("Getting services...");
     let services = Journal::list_services();
@@ -189,6 +199,7 @@ async fn get_services() -> Result<Vec<Unit>, JournalError> {
 }
 
 #[tauri::command]
+#[instrument]
 async fn get_boots() -> Result<Vec<Boot>, JournalError> {
     debug!("Getting boots...");
     let boots = Journal::list_boots();
@@ -198,6 +209,7 @@ async fn get_boots() -> Result<Vec<Boot>, JournalError> {
 }
 
 #[tauri::command]
+#[instrument]
 async fn get_system_status(
     monitor: tauri::State<'_, Mutex<Monitor>>,
 ) -> Result<SystemStatus, JournalError> {
@@ -224,6 +236,7 @@ pub struct ProcessQuery {
 }
 
 #[tauri::command]
+#[instrument]
 async fn get_processes(
     query: ProcessQuery,
     monitor: tauri::State<'_, Mutex<Monitor>>,
