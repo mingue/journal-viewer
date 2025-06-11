@@ -19,6 +19,7 @@ type ColumnViewOptions = {
   index: number;
   style: any;
   field: string;
+  info: string | undefined;
 };
 
 const formatSize = (val: number) => {
@@ -78,6 +79,7 @@ const columnViewOptions = [
     visible: true,
     style: { width: "8rem", "text-align": "right", "padding-right": "5px" },
     field: "pss_in_kb",
+    info: "Proportional Set Size: dedicated process memory + proportional part of shared libraries"
   },
   {
     name: "RSS",
@@ -85,6 +87,7 @@ const columnViewOptions = [
     visible: true,
     style: { width: "8rem", "text-align": "right", "padding-right": "5px" },
     field: "rss_in_kb",
+    info: "Resident Set Size: dedicated process memory + shared libraries"
   },
   {
     name: "USS",
@@ -92,6 +95,7 @@ const columnViewOptions = [
     visible: true,
     style: { width: "8rem", "text-align": "right", "padding-right": "5px" },
     field: "uss_in_kb",
+    info: "Proportional Set Size: dedicated process memory, excluding shared libraries"
   },
   {
     name: "Userspace time",
@@ -143,28 +147,6 @@ columnViewOptions.forEach((c, i) => {
 const sortColumn = ref<string | null>(null);
 const sortOrder = ref<"asc" | "desc">("asc");
 
-// const sortedProcesses = computed(() => {
-//   if (!sortColumn.value) return props.processes;
-
-//   let sortedProc = [...props.processes].sort((a, b) => {
-//     const field = sortColumn.value!;
-//     const valA = a[field];
-//     const valB = b[field];
-
-//     if (valA == null || valB == null) return 0;
-
-//     if (sortOrder.value === "asc") {
-//       return valA > valB ? 1 : valA < valB ? -1 : 0;
-//     } else {
-//       return valA < valB ? 1 : valA > valB ? -1 : 0;
-//     }
-//   });
-
-
-
-//   return props.processes;;
-// });
-
 function toggleSort(column: string) {
   if (sortColumn.value === column) {
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
@@ -179,7 +161,6 @@ function toggleSort(column: string) {
   })
 }
 
-const visibleColumnsCount = columnViewOptions.filter((x) => x.visible).length;
 </script>
 
 <template>
@@ -189,7 +170,7 @@ const visibleColumnsCount = columnViewOptions.filter((x) => x.visible).length;
       :class="theme == 'dark' ? 'table-dark' : ''">
       <thead>
         <th v-for="c in columnViewOptions.filter((x) => x.visible)" :style="c.style" @click="toggleSort(c.field)"
-          style="cursor: pointer;">
+          style="cursor: pointer;" :title="c.info != null ? c.info : c.name">
           {{ c.name }}
           <span v-if="sortColumn === c.field">
             <i :class="sortOrder === 'asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down'"></i>

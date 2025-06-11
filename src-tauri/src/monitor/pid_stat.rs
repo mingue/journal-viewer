@@ -5,17 +5,19 @@ pub fn read_file(
     pid: &usize,
     process_entry: &mut ProcessStatus,
 ) -> anyhow::Result<()> {
-    let stat = std::fs::read_to_string(format!("{procs_path}/{pid}/stat"))?;
-    let fields: Vec<&str> = stat.split(' ').collect();
+    if let Ok(stat) = std::fs::read_to_string(format!("{procs_path}/{pid}/stat")) {
+        let fields: Vec<&str> = stat.split(' ').collect();
 
-    // Get process name and remove parentesis
-    process_entry.process_name = fields[1][1..fields[1].len() - 1].to_owned();
-    // Get userspace time in clicks
-    // Get kernel/system time in clicks
-    process_entry.time_userspace_clicks = fields[13].parse::<usize>()?;
-    process_entry.time_kernel_clicks = fields[14].parse::<usize>()?;
-    process_entry.start_time = fields[21].parse::<usize>()?;
-    process_entry.scrapped_timestamp = chrono::Utc::now();
+        // Get process name and remove parentesis
+        process_entry.process_name = fields[1][1..fields[1].len() - 1].to_owned();
+        // Get userspace time in clicks
+        // Get kernel/system time in clicks
+        process_entry.time_userspace_clicks = fields[13].parse::<usize>()?;
+        process_entry.time_kernel_clicks = fields[14].parse::<usize>()?;
+        process_entry.start_time = fields[21].parse::<usize>()?;
+        process_entry.scrapped_timestamp = chrono::Utc::now();
+    }
+    
     Ok(())
 }
 

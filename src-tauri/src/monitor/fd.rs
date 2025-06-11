@@ -8,14 +8,16 @@ pub fn read_file(
     process_entry: &mut ProcessStatus,
 ) -> anyhow::Result<()> {
     // Obtain size from stats of fd for fast access to open fds
-    let stat = std::fs::metadata(format!("{procs_path}/{pid}/fd"))?;
-    process_entry.fds = stat.size();
+    if let Ok(stat) = std::fs::metadata(format!("{procs_path}/{pid}/fd")) {
+        process_entry.fds = stat.size();
+    }
+
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::monitor::{fd, ProcessStatus};
+    use crate::monitor::{ProcessStatus, fd};
     use anyhow::Result;
 
     #[test]

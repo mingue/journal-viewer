@@ -7,22 +7,23 @@ pub fn read_file(
     pid: &usize,
     process_entry: &mut ProcessStatus,
 ) -> anyhow::Result<()> {
-    let smaps_rollup = std::fs::read_to_string(format!("{procs_path}/{pid}/smaps_rollup"))?;
-    let lines = smaps_rollup.lines();
+    if let Ok(smaps_rollup) = std::fs::read_to_string(format!("{procs_path}/{pid}/smaps_rollup")) {
+        let lines = smaps_rollup.lines();
 
-    let lines: Vec<String> = lines.skip(1).map(|l| l.to_string()).collect();
+        let lines: Vec<String> = lines.skip(1).map(|l| l.to_string()).collect();
 
-    let fields: Vec<SmapLine> = lines
-        .iter()
-        .map(|l| parse_line(l))
-        .filter_map(|r| r.ok())
-        .map(|r| r.1)
-        .collect();
+        let fields: Vec<SmapLine> = lines
+            .iter()
+            .map(|l| parse_line(l))
+            .filter_map(|r| r.ok())
+            .map(|r| r.1)
+            .collect();
 
-    process_entry.pss_in_kb = fields.iter().find(|sl| sl.label == "Pss").unwrap().kb;
-    process_entry.rss_in_kb = fields.iter().find(|sl| sl.label == "Rss").unwrap().kb;
-    process_entry.uss_in_kb =
-        process_entry.pss_in_kb - fields.iter().find(|sl| sl.label == "Pss_Shmem").unwrap().kb;
+        process_entry.pss_in_kb = fields.iter().find(|sl| sl.label == "Pss").unwrap().kb;
+        process_entry.rss_in_kb = fields.iter().find(|sl| sl.label == "Rss").unwrap().kb;
+        process_entry.uss_in_kb =
+            process_entry.pss_in_kb - fields.iter().find(|sl| sl.label == "Pss_Shmem").unwrap().kb;
+    }
 
     Ok(())
 }
@@ -46,7 +47,7 @@ struct SmapLine<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::monitor::{smaps_rollup, ProcessStatus};
+    use crate::monitor::{ProcessStatus, smaps_rollup};
     use anyhow::Result;
 
     #[test]
