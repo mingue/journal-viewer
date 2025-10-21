@@ -28,7 +28,7 @@ pub fn read_file(
     Ok(())
 }
 
-fn parse_line(l: &str) -> nom::IResult<&str, SmapLine> {
+fn parse_line(l: &'_ str) -> nom::IResult<&'_ str, SmapLine<'_>> {
     let (r, label) = take_until(":")(l)?;
     let (r, _) = tag(":")(r)?;
     let (r, _) = multispace0(r)?;
