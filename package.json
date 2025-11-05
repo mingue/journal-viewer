@@ -9,7 +9,7 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "tauri-dev": "export RUST_LOG='debug' && tauri dev",
+    "tauri-dev": "export RUST_LOG='debug' && export JV_MONITOR_ENABLED='true' && tauri dev",
     "tauri-build": "tauri build"
   },
   "dependencies": {

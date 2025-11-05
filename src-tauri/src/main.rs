@@ -15,9 +15,15 @@ extern crate tracing;
 #[macro_use]
 extern crate lazy_static;
 
+use std::env;
+use std::str::FromStr;
+
 use crate::journal::Journal;
+use crate::journal::JournalError;
 use crate::journal::OpenFlags;
 use crate::monitor::Monitor;
+use serde::Deserialize;
+use serde::Serialize;
 use tauri::async_runtime::Mutex;
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::fmt;
@@ -54,8 +60,28 @@ fn main() {
             journal_controller::get_full_entry,
             journal_controller::get_boots,
             monitor_controller::get_system_status,
-            monitor_controller::get_processes
+            monitor_controller::get_processes,
+            get_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Config {
+    system_monitor_enabled: bool,
+}
+
+#[tauri::command]
+#[instrument]
+fn get_config() -> Result<Config, JournalError> {
+    let mut config = Config {
+        system_monitor_enabled: false,
+    };
+
+    if let Ok(monitor_enabled) = env::var("JV_MONITOR_ENABLED") {
+        config.system_monitor_enabled = FromStr::from_str(&monitor_enabled).unwrap();
+    }
+    Ok(config)
 }
