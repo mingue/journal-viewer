@@ -10,7 +10,12 @@
     "active": true,
     "category": "Utility",
     "copyright": "",
-    "targets": "deb",
+    "license": "GPL-3.0",
+    "licenseFile": "../LICENSE",
+    "targets": [
+      "deb",
+      "rpm"
+    ],
     "externalBin": [],
     "icon": [
       "icons/32x32.png",
@@ -40,6 +45,17 @@
           "systemd",
           "libwebkit2gtk-4.1-0"
         ]
+      },
+      "rpm": {
+        "depends": [
+          "systemd",
+          "webkit2gtk4.1",
+          "libappindicator-gtk3",
+          "xdotool",
+          "openssl-libs",
+          "librsvg2"
+        ],
+        "desktopTemplate": "../package/journal-viewer.desktop"
       }
     }
   },

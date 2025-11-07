@@ -1,14 +1,25 @@
-use crate::boot::Boot;
-use crate::journal_entries::JournalEntries;
-use crate::journal_entries::JournalEntry;
-use crate::journal_fields;
-use crate::libsdjournal::*;
-use crate::query::Query;
-use crate::query_builder::QueryBuilder;
-use crate::unit::Unit;
+mod boot;
+mod journal_entries;
+mod journal_fields;
+mod libsdjournal;
+mod libsdjournal_bindings;
+mod query;
+mod query_builder;
+mod unit;
+
 use bitflags::bitflags;
+pub use boot::Boot;
+pub use journal_entries::JournalEntries;
+pub use journal_entries::JournalEntry;
+use journal_fields::MESSAGE;
+use journal_fields::SOURCE_REALTIME_TIMESTAMP;
 use libc::c_void;
+pub use libsdjournal::JournalError;
+use libsdjournal::*;
+use query::Query;
+pub use query_builder::QueryBuilder;
 use std::process::Command;
+pub use unit::Unit;
 
 bitflags! {
     #[repr(C)]
@@ -90,8 +101,7 @@ impl Journal {
                 break;
             }
 
-            if let Ok(updated_timestamp) = self.get_field(journal_fields::SOURCE_REALTIME_TIMESTAMP)
-            {
+            if let Ok(updated_timestamp) = self.get_field(SOURCE_REALTIME_TIMESTAMP) {
                 last_timestamp = updated_timestamp.parse().unwrap();
                 trace!(
                     "Last timestamp {:?}",
@@ -100,7 +110,7 @@ impl Journal {
             }
 
             if !q.quick_search.is_empty() {
-                if let Ok(message) = self.get_field(journal_fields::MESSAGE) {
+                if let Ok(message) = self.get_field(MESSAGE) {
                     if !message.to_lowercase().contains(&q.quick_search) {
                         continue;
                     }
@@ -263,7 +273,7 @@ impl Journal {
             0,
             Unit {
                 unit_file: INIT_UNIT.into(),
-                state: "".into(),
+                state: String::new(),
                 preset: Option::None,
             },
         );

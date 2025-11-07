@@ -2,8 +2,8 @@
 authors = ["Victor Mingueza"]
 default-run = "journal-viewer"
 description = "A modern desktop log viewer for systemd journal"
-edition = "2021"
-license = "GPL 3.0"
+edition = "2024"
+license = "GPL-3.0"
 name = "journal-viewer"
 repository = "https://github.com/mingue/journal-viewer"
 rust-version = "1.85"
@@ -19,12 +19,17 @@ anyhow = "1"
 bitflags = "2"
 chrono = "0.4"
 env_logger = "0.11"
+lazy_static = "1"
 libc = "0.2"
-log = "0.4"
+nom = "7"
+rayon = "1"
 serde = {version = "1", features = ["derive"] }
 serde_json = "1"
+serde_with = {version = "3", features = ["chrono"] }
 tauri = {version = "2", features = [] }
 thiserror = "1"
+tracing = {version = "0.1.41", features = ["log", "attributes"] }
+tracing-subscriber = {version = "0.3.19", features = ["std", "env-filter"] }
 
 [features]
 # by default Tauri runs in production mode

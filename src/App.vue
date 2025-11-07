@@ -1,136 +1,76 @@
 <script setup lang="ts">
 import { reactive, onMounted } from "vue";
+import SystemMonitor from "./pages/SystemMonitor.vue";
+import LogViewer from "./pages/LogViewer.vue";
 import { invoke } from "@tauri-apps/api/core";
-import type { JournalEntries } from "./model/JournalEntries";
-import SummaryBar from "./components/SummaryBar.vue";
-import LogTable from "./components/LogTable.vue";
-import SearchBar from "./components/SearchBar.vue";
-import FilterSidebar from "./components/FilterSidebar.vue";
-import type { Filter } from "./model/Filter";
 
 let vm = reactive({
-  logs: {} as JournalEntries,
-  isSidebarCollapsed: true,
-  priority: "5",
-  services: [] as string[],
-  quickSearch: "",
   theme: "",
-  transports: ["syslog", "journal", "stdout"],
-  datetimeTo: "",
-  datetimeFrom: "",
-  bootIds: [] as string[],
+  activeTab: "logViewer",
+  isDarkThemeOn: true,
+  systemMonitorEnabled: false,
 });
 
-let journalQuery = {
-  fields: ["PRIORITY", "__REALTIME", "_COMM", "MESSAGE", "_TRANSPORT"],
-  priority: parseInt(vm.priority),
-  services: [] as string[],
-  quickSearch: vm.quickSearch,
-  limit: 50,
-  resetPosition: true,
-  transports: [] as string[],
-  datetimeTo: "",
-  datetimeFrom: "",
-  bootIds: [] as string[],
-};
-
-let loadingLogs = false;
-
-function getLogs(event?: Event) {
-  if (event != null) {
-    event.preventDefault();
-  }
-
-  vm.isSidebarCollapsed = true;
-
-  journalQuery.priority = parseInt(vm.priority);
-  journalQuery.quickSearch = vm.quickSearch;
-  journalQuery.resetPosition = true;
-  journalQuery.services = vm.services;
-  journalQuery.transports = vm.transports;
-  journalQuery.datetimeFrom = vm.datetimeFrom;
-  journalQuery.datetimeTo = vm.datetimeTo;
-  journalQuery.bootIds = vm.bootIds;
-
-  loadingLogs = true;
-
-  invoke<JournalEntries>("get_logs", {
-    query: journalQuery,
-  })
-    .then((response) => {
-      loadingLogs = false;
-      vm.logs = response;
-    })
-    .catch(() => {
-      loadingLogs = false;
-    });
-}
-
-function loadNextLogs() {
-  if (loadingLogs) {
-    return;
-  }
-
-  loadingLogs = true;
-
-  journalQuery.resetPosition = false;
-
-  invoke<JournalEntries>("get_logs", {
-    query: journalQuery,
-  })
-    .then((response) => {
-      vm.logs = {
-        ...response,
-        rows: vm.logs.rows.concat(response.rows),
-      };
-      loadingLogs = false;
-    })
-    .catch(() => {
-      loadingLogs = false;
-    });
-}
-
-function quickSearch(search: string) {
-  vm.quickSearch = search;
-  getLogs();
-}
-
 function toggleTheme() {
-  vm.theme == "dark" ? (vm.theme = "") : (vm.theme = "dark");
+  if (vm.theme == "dark") {
+    document.getElementsByTagName("html")[0].style = "height: 100%; background-color: #fff;";
+    vm.theme = "";
+  } else {
+    document.getElementsByTagName("html")[0].style = "height: 100%; background-color: #222;";
+    vm.theme = "dark";
+  }
+
+  vm.isDarkThemeOn = !vm.isDarkThemeOn;
 }
 
-function filter(filter: Filter) {
-  vm.priority = filter.priority;
-  vm.services = filter.services;
-  vm.transports = filter.transports;
-  vm.datetimeTo = filter.datetimeTo;
-  vm.datetimeFrom = filter.datetimeFrom;
-  vm.bootIds = filter.bootIds;
-  getLogs();
+function switchTab(tab: string) {
+  vm.activeTab = tab;
 }
 
 onMounted(() => {
   const match = window.matchMedia("(prefers-color-scheme: dark)");
-
+  document.getElementsByTagName("html")[0].style = "height: 100%";
   if (match) {
     vm.theme = "dark";
-    document.getElementsByTagName("html")[0].style = "background-color: #222;";
+    vm.isDarkThemeOn = true;
+    document.getElementsByTagName("html")[0].style = "height: 100%; background-color: #222;";
   }
-
-  getLogs();
 });
+
+invoke("get_config")
+  .then((response: any) => {
+    vm.systemMonitorEnabled = response.systemMonitorEnabled;
+  })
+  .catch((err) => {
+    console.error("GetConfig error: " + err);
+  });
 </script>
 
 <template>
   <header></header>
   <main :class="vm.theme">
-    <SummaryBar @toggle-theme="toggleTheme" />
-    <SearchBar @quick-search="quickSearch" />
-    <!-- Main Content -->
-    <div class="d-flex">
-      <FilterSidebar :theme="vm.theme" :priority="vm.priority" :transports="vm.transports" @filter="filter" />
-      <div class="flex-fill">
-        <LogTable :logs="vm.logs" :theme="vm.theme" @load-more="loadNextLogs" />
+    <div class="clearfix">
+      <ul class="nav nav-underline float-start">
+        <li class="nav-item">
+          <a class="nav-link" :class="vm.activeTab == 'logViewer' ? 'active' : ''" aria-current="page" href="#"
+            @click="switchTab('logViewer')">Log Viewer</a>
+        </li>
+        <li class="nav-item" v-if="vm.systemMonitorEnabled">
+          <a class="nav-link" :class="vm.activeTab == 'systemMonitor' ? 'active' : ''" href="#"
+            @click="switchTab('systemMonitor')">System Monitor</a>
+        </li>
+      </ul>
+      <div class="float-end d-inline-block theme-toggle" @click="toggleTheme">
+        <i class="bi bi-lightbulb d-inline-block" title="Toggle theme" v-if="vm.isDarkThemeOn"></i>
+        <i class="bi bi-lightbulb-fill d-inline-block" title="Toggle theme" v-if="!vm.isDarkThemeOn"></i>
+      </div>
+    </div>
+    <div class="content">
+      <div class="content-tab" v-if="vm.activeTab == 'logViewer'">
+        <LogViewer :theme="vm.theme"></LogViewer>
+      </div>
+      <div class="content-tab" v-if="vm.activeTab == 'systemMonitor'">
+        <SystemMonitor :theme="vm.theme"></SystemMonitor>
       </div>
     </div>
   </main>
@@ -139,5 +79,55 @@ onMounted(() => {
 <style scoped>
 main.dark {
   background-color: #222;
+}
+
+.nav {
+  padding-top: 4px;
+  padding-left: 16px;
+  padding-right: 10px;
+}
+
+.nav-item {
+  padding-right: 10px;
+}
+
+main .nav-item a {
+  color: #444;
+}
+
+main .nav-item a.active {
+  color: #222;
+}
+
+main.dark .nav-item a {
+  color: #ddd;
+}
+
+main.dark .nav-item a.active {
+  color: #eee;
+}
+
+.content {
+  padding-left: 16px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+}
+
+.content-tab {
+  padding-top: 20px;
+}
+
+main .bi {
+  padding-top: 4px;
+}
+
+main.dark .bi {
+  color: #eee;
+}
+
+.theme-toggle {
+  padding-top: 6px;
+  padding-right: 20px;
+  cursor: pointer;
 }
 </style>
