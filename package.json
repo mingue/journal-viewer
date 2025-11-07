@@ -34,7 +34,7 @@
     "npm-run-all": "~4",
     "prettier": "~3",
     "typescript": "~5",
-    "vite": "~5",
+    "vite": "~6",
     "vue-tsc": "~2"
   }
 }
