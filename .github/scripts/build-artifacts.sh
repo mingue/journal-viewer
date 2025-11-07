@@ -14,6 +14,7 @@ cd ../../../
 
 cp './src-tauri/target/release/journal-viewer_'$pkgver'_x86_64.tar.gz' ./out/
 cp './src-tauri/target/release/bundle/deb/journal-viewer_'$pkgver'_amd64.deb' ./out/
+cp './src-tauri/target/release/bundle/rpm/journal-viewer-'$pkgver'-1.x86_64.rpm' ./out/
 cp ./package/journal-viewer.desktop ./out/
 cp ./package/PKGBUILD-bin.tmpl ./out/PKGBUILD-bin
 cp ./package/PKGBUILD-src.tmpl ./out/PKGBUILD-src
